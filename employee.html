@@ -22,6 +22,7 @@
       min-height: 100%;
       z-index: -1;
       object-fit: cover;
+      pointer-events: none; /* تعطيل التفاعل مع الفيديو */
     }
     /* قواعد عامة */
     body {
@@ -49,6 +50,10 @@
       object-fit: cover;
       margin-left: 10px;
     }
+    /* رسالة الترحيب باللون الأبيض */
+    #employeeNameDisplay {
+      color: #fff;
+    }
     .logout-btn {
       padding: 8px 16px;
       background: #e74c3c;
@@ -73,11 +78,11 @@
       position: relative;
       overflow: hidden;
     }
-    /* زر تبديل اللغة بشكل أيقونة */
+    /* زر الترجمة على شكل أيقونة في الزاوية العليا اليمنى */
     .lang-toggle-btn {
       position: absolute;
-      top: 15px;
-      left: 15px;
+      top: 10px;
+      right: 10px;
       z-index: 10;
       background: #3498db;
       color: #fff;
@@ -298,6 +303,8 @@
       border-color: #3498db;
       outline: none;
     }
+    /* تحويل مدخل اسم المستخدم لأحرف صغيرة */
+    #accUsername { text-transform: lowercase; }
     .account-settings button {
       margin-top: 15px;
       padding: 10px 20px;
@@ -323,8 +330,8 @@
   </style>
 </head>
 <body>
-  <!-- خلفية الفيديو -->
-  <video autoplay muted loop id="bgVideo">
+  <!-- خلفية الفيديو (تعمل فقط كخلفية بدون تفاعل) -->
+  <video autoplay muted loop id="bgVideo" playsinline disablePictureInPicture>
     <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
     متصفحك لا يدعم تشغيل الفيديو.
   </video>
@@ -403,7 +410,6 @@
       <div class="account-settings">
         <h3 id="settingsHeader">إعدادات الحساب</h3>
         <label id="usernameLabel" for="accUsername">تغيير اسم المستخدم:</label>
-        <!-- تحويل قيمة المدخل دائمًا إلى أحرف صغيرة -->
         <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد" oninput="this.value = this.value.toLowerCase()">
         <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
         <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
@@ -415,6 +421,12 @@
   </div>
   
   <script>
+    // منع الرجوع للخلف لمنع الوصول للصفحة بدون تسجيل خروج
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+      history.go(1);
+    };
+
     // إعدادات Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
@@ -493,15 +505,15 @@
       }
     };
 
-    // استرجاع اسم الموظف المسجل
+    // التحقق من تسجيل الدخول (يجب أن تكون معلومات تسجيل الدخول محفوظة)
     const employeeName = localStorage.getItem('employeeName');
     if (!employeeName) {
-      alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
-      window.location.href = "login.html";
+      alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول.");
+      window.location.href = "index.html";
     }
     document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
 
-    // تحديث النصوص الثابتة للواجهة بناءً على اللغة الحالية
+    // تحديث النصوص الثابتة بناءً على اللغة الحالية
     function updateStaticTexts() {
       document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
       document.querySelector('.logout-btn').textContent = translations[currentLanguage].logout;
@@ -523,7 +535,7 @@
     }
     updateStaticTexts();
 
-    // متغير لتحديد نص الدعم الفني في المحادثة
+    // نص الدعم الفني المستخدم في المحادثة
     let supportNameText = translations[currentLanguage].supportName;
 
     // استرجاع تعيينات البائع المميز
@@ -532,7 +544,7 @@
       topSellerDesignations = snapshot.val() || {};
     });
 
-    // دالة المساعدة للحصول على نسبة البائع المميز
+    // دالة للحصول على نسبة البائع المميز
     function getTopSellerRate(empName, saleDate) {
       let rate = 0.5; // افتراضي للموظف العادي
       for (const key in topSellerDesignations) {
@@ -619,14 +631,14 @@
       document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
     }
 
-    // تحميل صورة الموظف للعرض في الهيدر
+    // تحميل صورة الموظف للعرض في الهيدر مع تجاوز الكاش
     function loadEmployeePhoto() {
       database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
       .then(snapshot => {
         let empPhoto = "";
         snapshot.forEach(child => { empPhoto = child.val().photo; });
         if (empPhoto) {
-          document.getElementById('employeePhotoDisplay').src = empPhoto;
+          document.getElementById('employeePhotoDisplay').src = empPhoto + '?t=' + new Date().getTime();
         }
       });
     }
@@ -694,26 +706,36 @@
           fileRef.put(file).then(() => {
             fileRef.getDownloadURL().then(photoURL => {
               updates.photo = photoURL;
-              database.ref('employees/' + empKey).update(updates);
+              database.ref('employees/' + empKey).update(updates)
+              .then(() => {
+                // إعادة تحميل الصورة بعد التحديث
+                loadEmployeePhoto();
+                alert("تم تحديث إعدادات الحساب.");
+              });
+              // تحديث حساب الموظف (يمكن تعديل هذا الجزء إذا كان مطلوب تحديث بيانات أخرى)
               database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
               .then(snap => {
                 snap.forEach(child => {
                   child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
                 });
               });
-              loadEmployeePhoto();
-              alert("تم تحديث إعدادات الحساب.");
+            }).catch(error => {
+              alert("حدث خطأ في تحديث الصورة: " + error.message);
             });
+          }).catch(error => {
+            alert("فشل تحميل الصورة: " + error.message);
           });
         } else {
-          database.ref('employees/' + empKey).update(updates);
+          database.ref('employees/' + empKey).update(updates)
+          .then(() => {
+            alert("تم تحديث إعدادات الحساب.");
+          });
           database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
           .then(snap => {
             snap.forEach(child => {
               child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
             });
           });
-          alert("تم تحديث إعدادات الحساب.");
         }
       });
     }
@@ -729,13 +751,9 @@
     /* ------------------ تبديل اللغة ------------------ */
     function toggleLanguage() {
       currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
-      // تحديث النصوص الثابتة
       updateStaticTexts();
-      // تحديث اسم الدعم الفني المستخدم في رسائل المحادثة
       supportNameText = translations[currentLanguage].supportName;
-      // إعادة تحميل بيانات المبيعات لتحديث رؤوس الجدول والنصوص
       loadSalesData();
-      // إعادة تحميل رسائل المحادثة لتحديث اسم الدعم الفني
       loadEmployeeChatMessages();
     }
 
