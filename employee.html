@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Employee Dashboard - Business Management System</title>
+  <title>لوحة الموظف - نظام إدارة الأعمال</title>
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
   <style>
-    /* Global Styles */
+    /* قواعد عامة */
     body {
       font-family: 'Roboto', sans-serif;
       background: linear-gradient(135deg, #e0eafc, #cfdef3);
       margin: 0;
       padding: 20px;
+      transition: background 0.3s ease;
     }
     .header {
       display: flex;
@@ -33,7 +34,7 @@
       height: 50px;
       border-radius: 50%;
       object-fit: cover;
-      margin-right: 10px;
+      margin-left: 10px;
     }
     .logout-btn {
       padding: 8px 16px;
@@ -43,8 +44,12 @@
       border-radius: 6px;
       cursor: pointer;
       margin-top: 10px;
+      transition: transform 0.3s ease, background 0.3s ease;
     }
-    .logout-btn:hover { background: #c0392b; }
+    .logout-btn:hover { 
+      background: #c0392b;
+      transform: scale(1.05);
+    }
     .container {
       max-width: 900px;
       margin: 0 auto;
@@ -52,8 +57,28 @@
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
     }
-    /* Tab Navigation for Interfaces */
+    /* زر تبديل اللغة */
+    .lang-toggle-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 10;
+      background: #3498db;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
+    }
+    .lang-toggle-btn:hover {
+      background: #2980b9;
+      transform: scale(1.05);
+    }
+    /* تنسيق ألسنة التنقل */
     .tab-nav {
       display: flex;
       border-bottom: 2px solid #ddd;
@@ -67,20 +92,24 @@
       border: none;
       font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: background 0.3s ease, color 0.3s ease;
     }
     .tab-nav button:hover { background: #f0f0f0; }
     .tab-nav button.active {
       border-bottom: 3px solid #3498db;
       font-weight: bold;
     }
-    /* Analytics Interface */
+    /* واجهة التحليلات - فلتر المبيعات */
     .filter-section {
       margin-bottom: 20px;
-      padding: 15px;
+      padding: 20px;
       background: #f0f4f8;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    .filter-section:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
     }
     .filter-section label {
       margin-right: 10px;
@@ -91,6 +120,11 @@
       padding: 6px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      transition: border 0.3s ease;
+    }
+    .filter-section input:focus {
+      border-color: #3498db;
+      outline: none;
     }
     .filter-section button {
       padding: 8px 16px;
@@ -99,30 +133,45 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
     }
-    .filter-section button:hover { background: #2980b9; }
+    .filter-section button:hover { 
+      background: #2980b9;
+      transform: scale(1.03);
+    }
+    /* بطاقة المبيعات */
     .sales-card {
       background: #f7f9fc;
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow-x: auto;
+      transition: box-shadow 0.3s ease;
+    }
+    .sales-card:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
     }
     .sales-card table {
       width: 100%;
       border-collapse: collapse;
     }
     .sales-card th, .sales-card td {
-      padding: 10px;
+      padding: 12px;
       border-bottom: 1px solid #ddd;
-      text-align: left;
+      text-align: center;
     }
-    .sales-card th { background: #3498db; color: #fff; }
+    .sales-card th { 
+      background: #3498db; 
+      color: #fff;
+      font-weight: bold;
+    }
     .sales-summary {
       margin-top: 15px;
       font-size: 16px;
+      font-weight: bold;
     }
-    /* Conversation Interface (Modified) */
+    /* واجهة المحادثة */
     .chat-top-bar {
       display: flex;
       align-items: center;
@@ -134,7 +183,15 @@
       width: 30px;
       height: 30px;
       border-radius: 50%;
+      margin-left: 10px;
+    }
+    .mulberry-ceo {
+      font-weight: bold;
       margin-right: 10px;
+      /* تأثير تدرج لوني للنص */
+      background: linear-gradient(to right, blue, purple);
+      -webkit-background-clip: text;
+      color: transparent;
     }
     .chat-area {
       height: 400px;
@@ -142,6 +199,9 @@
       background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
       background-size: cover;
       padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: height 0.3s ease;
     }
     .chat-bottom-bar {
       display: flex;
@@ -154,12 +214,21 @@
       border: 1px solid #ccc;
       border-radius: 20px;
       margin-right: 10px;
+      transition: border 0.3s ease;
+    }
+    .chat-bottom-bar input[type="text"]:focus {
+      border-color: #3498db;
+      outline: none;
     }
     .chat-bottom-bar button {
       background: transparent;
       border: none;
       cursor: pointer;
       font-size: 20px;
+      transition: transform 0.3s ease;
+    }
+    .chat-bottom-bar button:hover {
+      transform: scale(1.1);
     }
     .chat-bubble {
       max-width: 70%;
@@ -168,35 +237,41 @@
       margin-bottom: 10px;
       position: relative;
       clear: both;
+      word-wrap: break-word;
     }
-    /* On Employee Page: Employee-sent messages (green bubble) */
+    /* فقاعة رسائل الموظف */
     .chat-bubble.employee {
-      background: #27ae60; /* green */
+      background: #27ae60;
       color: #fff;
-      margin-left: auto;
+      margin-right: auto;
     }
-    /* On Employee Page: Admin-sent messages (white bubble) */
+    /* فقاعة رسائل الدعم الفني */
     .chat-bubble.admin {
-      background: #fff; /* white */
+      background: #fff;
       color: #000;
       border: 1px solid #ddd;
-      margin-right: auto;
+      margin-left: auto;
       padding-left: 50px;
+      position: relative;
     }
     .chat-bubble.admin .admin-name {
       font-weight: bold;
       margin-bottom: 5px;
       display: block;
     }
-    /* Settings Interface */
+    /* واجهة الإعدادات */
     .account-settings {
       padding: 20px;
       background: #f8f9fa;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s ease;
+    }
+    .account-settings:hover {
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
     }
     .account-settings h3 { margin-top: 0; }
-    .account-settings label { display: block; margin-top: 10px; }
+    .account-settings label { display: block; margin-top: 10px; font-weight: 500; }
     .account-settings input[type="text"],
     .account-settings input[type="password"],
     .account-settings input[type="file"] {
@@ -205,6 +280,11 @@
       margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      transition: border 0.3s ease;
+    }
+    .account-settings input:focus {
+      border-color: #3498db;
+      outline: none;
     }
     .account-settings button {
       margin-top: 15px;
@@ -214,13 +294,17 @@
       border: none;
       border-radius: 6px;
       cursor: pointer;
+      transition: background 0.3s ease, transform 0.3s ease;
     }
-    .account-settings button:hover { background: #2980b9; }
-    /* Responsive */
+    .account-settings button:hover { 
+      background: #2980b9;
+      transform: scale(1.03);
+    }
+    /* استجابة */
     @media (max-width: 768px) {
       .container { padding: 20px; }
       .header { flex-direction: column; align-items: flex-start; }
-      .logout-btn { align-self: stretch; text-align: center; }
+      .logout-btn { width: 100%; text-align: center; }
       .chat-area { height: 200px; }
       .tab-nav button { font-size: 14px; }
     }
@@ -229,31 +313,33 @@
 <body>
   <div class="header">
     <div class="header-left">
-      <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="Employee Photo">
-      <h1 id="employeeNameDisplay">Employee Dashboard</h1>
+      <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="صورة الموظف">
+      <h1 id="employeeNameDisplay">لوحة الموظف</h1>
     </div>
-    <button class="logout-btn" onclick="logout()">Logout</button>
+    <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
   </div>
   <div class="container">
-    <!-- Tab Navigation -->
+    <!-- زر تبديل اللغة -->
+    <button id="langToggle" class="lang-toggle-btn" onclick="toggleLanguage()">ترجمة إلى الإنجليزية</button>
+    <!-- ألسنة التنقل -->
     <div class="tab-nav">
-      <button class="active" onclick="showEmployeeTab('analytics')">Analytics</button>
-      <button onclick="showEmployeeTab('conversation')">Conversation</button>
-      <button onclick="showEmployeeTab('settings')">Settings</button>
+      <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
+      <button id="tabConversationBtn" onclick="showEmployeeTab('conversation', event)">المحادثة</button>
+      <button id="tabSettingsBtn" onclick="showEmployeeTab('settings', event)">الإعدادات</button>
     </div>
     
-    <!-- Analytics Interface -->
+    <!-- واجهة التحليلات -->
     <div id="analytics" class="employee-tab" style="display: block;">
       <div class="filter-section">
-        <label>Filter Sales By:</label>
-        <label>
-          <input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> Day
+        <span id="filterLabel">تصفية المبيعات حسب:</span>
+        <label id="radioDayLabel">
+          <input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> يوم
         </label>
-        <label>
-          <input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> Month
+        <label id="radioMonthLabel">
+          <input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> شهر
         </label>
-        <label>
-          <input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> Custom Period
+        <label id="radioPeriodLabel">
+          <input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> فترة مخصصة
         </label>
         <div id="filterDay" style="margin-top:10px;">
           <input type="date" id="filterDayInput">
@@ -262,54 +348,55 @@
           <input type="month" id="filterMonthInput">
         </div>
         <div id="filterPeriod" style="margin-top:10px; display:none;">
-          <label>From:</label>
+          <label>من:</label>
           <input type="date" id="filterStartDate">
-          <label>To:</label>
+          <label>إلى:</label>
           <input type="date" id="filterEndDate">
         </div>
-        <button onclick="loadSalesData()">Apply Filter</button>
+        <button onclick="loadSalesData()">تطبيق التصفية</button>
       </div>
-      <h2>Your Sales & Profit Data</h2>
+      <h2 id="salesHeader">بيانات المبيعات والأرباح الخاصة بك</h2>
       <div id="salesData" class="sales-card">
-        <!-- Sales table loads here -->
+        <!-- يتم تحميل جدول المبيعات هنا -->
       </div>
       <div class="sales-summary" id="salesSummary"></div>
     </div>
     
-    <!-- Conversation Interface (Modified) -->
+    <!-- واجهة المحادثة -->
     <div id="conversation" class="employee-tab" style="display: none;">
       <div class="chat-top-bar">
-        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="Logo">
-        <span>Communication with Parent Company</span>
+        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="الشعار">
+        <span id="chatHeader">التواصل مع الشركة الأم</span>
+        <span class="mulberry-ceo">Mulberry-CEO</span>
       </div>
       <div class="chat-area">
         <div id="employeeChatMessages">
-          <!-- Chat messages will load here -->
+          <!-- تحميل رسائل المحادثة -->
         </div>
       </div>
       <div class="chat-bottom-bar">
-        <input type="text" id="employeeChatInput" placeholder="Type your message...">
+        <input type="text" id="employeeChatInput" placeholder="اكتب رسالتك...">
         <button onclick="sendEmployeeChatMessage()"><i class="send-icon">✈️</i></button>
       </div>
     </div>
     
-    <!-- Settings Interface -->
+    <!-- واجهة الإعدادات -->
     <div id="settings" class="employee-tab" style="display: none;">
       <div class="account-settings">
-        <h3>Account Settings</h3>
-        <label for="accUsername">Change Username:</label>
-        <input type="text" id="accUsername" placeholder="New Username">
-        <label for="accPassword">Change Password:</label>
-        <input type="password" id="accPassword" placeholder="New Password">
-        <label for="accPhoto">Change Personal Photo:</label>
+        <h3 id="settingsHeader">إعدادات الحساب</h3>
+        <label id="usernameLabel" for="accUsername">تغيير اسم المستخدم:</label>
+        <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد">
+        <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
+        <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
+        <label id="photoLabel" for="accPhoto">تغيير الصورة الشخصية:</label>
         <input type="file" id="accPhoto" accept="image/*">
-        <button onclick="updateAccountSettings()">Update Settings</button>
+        <button id="updateSettingsBtn" onclick="updateAccountSettings()">تحديث الإعدادات</button>
       </div>
     </div>
   </div>
   
   <script>
-    // Firebase Configuration
+    // إعدادات Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
       authDomain: "team-analysis-3c196.firebaseapp.com",
@@ -324,23 +411,112 @@
     const database = firebase.database();
     const storage = firebase.storage();
 
-    // Retrieve logged-in employee's name
+    // إعداد الترجمة
+    let currentLanguage = 'ar';
+    const translations = {
+      ar: {
+        employeeDashboard: "لوحة الموظف",
+        welcome: "أهلاً, ",
+        logout: "تسجيل الخروج",
+        tabAnalytics: "تحليلات",
+        tabConversation: "المحادثة",
+        tabSettings: "الإعدادات",
+        filterLabel: "تصفية المبيعات حسب:",
+        radioDay: "يوم",
+        radioMonth: "شهر",
+        radioPeriod: "فترة مخصصة",
+        salesHeader: "بيانات المبيعات والأرباح الخاصة بك",
+        tableHeaders: {
+          product: "المنتج",
+          original: "السعر الأصلي (₪)",
+          sale: "سعر البيع (₪)",
+          date: "التاريخ"
+        },
+        salesSummary: (totalSales, totalProfit) => `إجمالي المبيعات: ${totalSales} | إجمالي الأرباح: ₪${totalProfit}`,
+        chatHeader: "التواصل مع الشركة الأم",
+        supportName: "الدعم الفني",
+        settingsHeader: "إعدادات الحساب",
+        changeUsername: "تغيير اسم المستخدم:",
+        changePassword: "تغيير كلمة المرور:",
+        changePhoto: "تغيير الصورة الشخصية:",
+        updateSettings: "تحديث الإعدادات",
+        langToggle: "ترجمة إلى الإنجليزية",
+        chatInputPlaceholder: "اكتب رسالتك..."
+      },
+      en: {
+        employeeDashboard: "Employee Dashboard",
+        welcome: "Welcome, ",
+        logout: "Logout",
+        tabAnalytics: "Analytics",
+        tabConversation: "Conversation",
+        tabSettings: "Settings",
+        filterLabel: "Filter Sales By:",
+        radioDay: "Day",
+        radioMonth: "Month",
+        radioPeriod: "Custom Period",
+        salesHeader: "Your Sales & Profit Data",
+        tableHeaders: {
+          product: "Product",
+          original: "Original Price (₪)",
+          sale: "Sale Price (₪)",
+          date: "Date"
+        },
+        salesSummary: (totalSales, totalProfit) => `Total Sales: ${totalSales} | Total Profit: ₪${totalProfit}`,
+        chatHeader: "Communication with Parent Company",
+        supportName: "Technical Support",
+        settingsHeader: "Account Settings",
+        changeUsername: "Change Username:",
+        changePassword: "Change Password:",
+        changePhoto: "Change Personal Photo:",
+        updateSettings: "Update Settings",
+        langToggle: "Translate to Arabic",
+        chatInputPlaceholder: "Type your message..."
+      }
+    };
+
+    // استرجاع اسم الموظف المسجل
     const employeeName = localStorage.getItem('employeeName');
     if (!employeeName) {
-      alert("No employee session found. Please login again.");
+      alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
       window.location.href = "login.html";
     }
-    document.getElementById('employeeNameDisplay').textContent = "Welcome, " + employeeName;
+    document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
 
-    // Global variable for Top Seller designations
+    // تحديث نصوص الواجهة بناءً على اللغة الحالية
+    function updateStaticTexts() {
+      document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
+      document.querySelector('.logout-btn').textContent = translations[currentLanguage].logout;
+      document.getElementById('tabAnalyticsBtn').textContent = translations[currentLanguage].tabAnalytics;
+      document.getElementById('tabConversationBtn').textContent = translations[currentLanguage].tabConversation;
+      document.getElementById('tabSettingsBtn').textContent = translations[currentLanguage].tabSettings;
+      document.getElementById('filterLabel').textContent = translations[currentLanguage].filterLabel;
+      document.getElementById('radioDayLabel').innerHTML = `<input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> ${translations[currentLanguage].radioDay}`;
+      document.getElementById('radioMonthLabel').innerHTML = `<input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> ${translations[currentLanguage].radioMonth}`;
+      document.getElementById('radioPeriodLabel').innerHTML = `<input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> ${translations[currentLanguage].radioPeriod}`;
+      document.getElementById('salesHeader').textContent = translations[currentLanguage].salesHeader;
+      document.getElementById('chatHeader').textContent = translations[currentLanguage].chatHeader;
+      document.getElementById('settingsHeader').textContent = translations[currentLanguage].settingsHeader;
+      document.getElementById('usernameLabel').textContent = translations[currentLanguage].changeUsername;
+      document.getElementById('passwordLabel').textContent = translations[currentLanguage].changePassword;
+      document.getElementById('photoLabel').textContent = translations[currentLanguage].changePhoto;
+      document.getElementById('updateSettingsBtn').textContent = translations[currentLanguage].updateSettings;
+      document.getElementById('employeeChatInput').setAttribute("placeholder", translations[currentLanguage].chatInputPlaceholder);
+      document.getElementById('langToggle').textContent = translations[currentLanguage].langToggle;
+    }
+    updateStaticTexts();
+
+    // متغير لتحديد نص الدعم الفني في المحادثة
+    let supportNameText = translations[currentLanguage].supportName;
+
+    // استرجاع تعيينات البائع المميز
     let topSellerDesignations = {};
     database.ref('topSellerDesignations').on('value', snapshot => {
       topSellerDesignations = snapshot.val() || {};
     });
 
-    // Helper: Get Top Seller rate for a sale
+    // دالة المساعدة للحصول على نسبة البائع المميز
     function getTopSellerRate(empName, saleDate) {
-      let rate = 0.5; // default for regular employee
+      let rate = 0.5; // افتراضي للموظف العادي
       for (const key in topSellerDesignations) {
         const des = topSellerDesignations[key];
         if (des.employee === empName) {
@@ -356,7 +532,7 @@
       return rate;
     }
 
-    // Load Sales Data (Analytics Interface)
+    // تحميل بيانات المبيعات (واجهة التحليلات)
     function loadSalesData() {
       database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
       .then(empSnapshot => {
@@ -367,7 +543,12 @@
           const salesData = snapshot.val() || {};
           let totalSales = 0;
           let totalProfit = 0;
-          let tableHTML = "<table><tr><th>Product</th><th>Original Price (₪)</th><th>Sale Price (₪)</th><th>Date</th></tr>";
+          let tableHTML = `<table><tr>
+            <th>${translations[currentLanguage].tableHeaders.product}</th>
+            <th>${translations[currentLanguage].tableHeaders.original}</th>
+            <th>${translations[currentLanguage].tableHeaders.sale}</th>
+            <th>${translations[currentLanguage].tableHeaders.date}</th>
+            </tr>`;
           const filterType = document.querySelector('input[name="filterType"]:checked').value;
           let filterFn = sale => true;
           if (filterType === "day") {
@@ -407,20 +588,20 @@
           }
           tableHTML += "</table>";
           document.getElementById('salesData').innerHTML = tableHTML;
-          document.getElementById('salesSummary').innerHTML = `<p>Total Sales: ${totalSales} | Total Profit: ₪${totalProfit.toFixed(2)}</p>`;
+          document.getElementById('salesSummary').innerHTML = `<p>${translations[currentLanguage].salesSummary(totalSales, totalProfit.toFixed(2))}</p>`;
         });
       });
     }
     loadSalesData();
 
-    // Toggle Filter Inputs (Analytics Interface)
+    // تبديل عرض مدخلات الفلترة
     function toggleFilterInputs(type) {
       document.getElementById('filterDay').style.display = (type === 'day') ? 'block' : 'none';
       document.getElementById('filterMonth').style.display = (type === 'month') ? 'block' : 'none';
       document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
     }
 
-    // Load Employee Photo for Header
+    // تحميل صورة الموظف للعرض في الهيدر
     function loadEmployeePhoto() {
       database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
       .then(snapshot => {
@@ -433,7 +614,7 @@
     }
     loadEmployeePhoto();
 
-    /* ------------------ Conversation Interface Functions for Employee ------------------ */
+    /* ------------------ واجهة المحادثة ------------------ */
     function loadEmployeeChatMessages() {
       database.ref('conversation').orderByChild('date').on('value', snapshot => {
         const messagesData = snapshot.val() || {};
@@ -441,14 +622,14 @@
         for (const key in messagesData) {
           const msg = messagesData[key];
           if (msg.sender === "admin") {
-            // Admin-sent messages: white bubble
+            // رسائل الدعم الفني
             chatHTML += `<div class="chat-bubble admin">
-              <span class="admin-name">Admin</span>
+              <span class="admin-name">${translations[currentLanguage].supportName}</span>
               <span>${msg.message}</span>
               <div style="font-size:10px;">${new Date(msg.date).toLocaleTimeString()}</div>
             </div>`;
           } else {
-            // Employee-sent messages: green bubble
+            // رسائل الموظف
             chatHTML += `<div class="chat-bubble employee">
               <span>${msg.message}</span>
               <div style="font-size:10px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
@@ -460,6 +641,7 @@
       });
     }
     loadEmployeeChatMessages();
+
     function sendEmployeeChatMessage() {
       const input = document.getElementById('employeeChatInput');
       const text = input.value.trim();
@@ -474,7 +656,7 @@
       .then(() => { input.value = ""; });
     }
 
-    /* ------------------ Settings Interface ------------------ */
+    /* ------------------ واجهة الإعدادات ------------------ */
     function updateAccountSettings() {
       const newUsername = document.getElementById('accUsername').value.trim();
       const newPassword = document.getElementById('accPassword').value.trim();
@@ -502,7 +684,7 @@
                 });
               });
               loadEmployeePhoto();
-              alert("Account settings updated.");
+              alert("تم تحديث إعدادات الحساب.");
             });
           });
         } else {
@@ -513,63 +695,36 @@
               child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
             });
           });
-          alert("Account settings updated.");
+          alert("تم تحديث إعدادات الحساب.");
         }
       });
     }
 
-    /* ------------------ Tab Navigation for Employee Page ------------------ */
-    function showEmployeeTab(tabName) {
+    /* ------------------ تغيير الألسنة ------------------ */
+    function showEmployeeTab(tabName, event) {
       document.querySelectorAll('.employee-tab').forEach(tab => tab.style.display = 'none');
-      const tabs = document.querySelectorAll('.tab-nav button');
-      tabs.forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-nav button').forEach(btn => btn.classList.remove('active'));
       event.currentTarget.classList.add('active');
       document.getElementById(tabName).style.display = 'block';
     }
 
-    /* Message Form Submission (for additional messages) */
-    document.getElementById('messageForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const messageText = document.getElementById('messageText').value.trim();
-      if (!messageText) return;
-      const messageData = {
-        employeeUsername: localStorage.getItem('employeeUsername'),
-        message: messageText,
-        date: new Date().toISOString(),
-        reply: ""
-      };
-      database.ref('employeeMessages').push(messageData)
-      .then(() => {
-        document.getElementById('messageAlert').textContent = "Message sent successfully!";
-        document.getElementById('messageText').value = "";
-      })
-      .catch(error => {
-        document.getElementById('messageAlert').textContent = "Error: " + error.message;
-      });
-    });
-
-    /* Load Replies in Conversation Interface */
-    function loadReplies() {
-      database.ref('employeeMessages').orderByChild('employeeUsername').equalTo(localStorage.getItem('employeeUsername')).on('value', snapshot => {
-        const messages = snapshot.val() || {};
-        let repliesHTML = "";
-        for (const key in messages) {
-          const msg = messages[key];
-          if (msg.reply) {
-            repliesHTML += `<div class="chat-bubble received">
-              <p>${msg.reply}</p>
-              <small>${new Date(msg.date).toLocaleString()}</small>
-            </div>`;
-          }
-        }
-        document.getElementById('replies').innerHTML = repliesHTML;
-      });
+    /* ------------------ تبديل اللغة ------------------ */
+    function toggleLanguage() {
+      currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+      // تحديث النصوص الثابتة
+      updateStaticTexts();
+      // تحديث اسم الدعم الفني المستخدم في رسائل المحادثة
+      supportNameText = translations[currentLanguage].supportName;
+      // إعادة تحميل بيانات المبيعات لتحديث رؤوس الجدول والنصوص
+      loadSalesData();
+      // إعادة تحميل رسائل المحادثة لتحديث اسم الدعم الفني
+      loadEmployeeChatMessages();
     }
-    loadReplies();
 
+    /* ------------------ تسجيل الخروج ------------------ */
     function logout() {
       localStorage.clear();
-       window.location.href = "index.html";
+      window.location.href = "index.html";
     }
   </script>
 </body>
