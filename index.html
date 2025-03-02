@@ -16,7 +16,7 @@
       font-family: 'Roboto', sans-serif;
       direction: rtl;
     }
-    /* تنسيق فيديو الخلفية */
+    /* تنسيق فيديو الخلفية بحيث لا يكون قابل للتفاعل */
     #bg-video {
       position: fixed;
       top: 0;
@@ -25,6 +25,7 @@
       height: 100%;
       object-fit: cover;
       z-index: -1;
+      pointer-events: none;
     }
     /* تنسيق حاوية تسجيل الدخول */
     .login-container {
@@ -105,7 +106,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <!-- فيديو الخلفية -->
+  <!-- فيديو الخلفية بدون عناصر تحكم -->
   <video autoplay muted loop id="bg-video">
     <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
     متصفحك لا يدعم الفيديو.
