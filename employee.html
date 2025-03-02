@@ -2,18 +2,31 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <title>لوحة الموظف - نظام إدارة الأعمال</title>
+  <!-- رابط خطوط Google -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
+  <!-- أيقونات Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
   <style>
+    /* خلفية الفيديو */
+    #bgVideo {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+    }
     /* قواعد عامة */
     body {
       font-family: 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #e0eafc, #cfdef3);
+      background: transparent;
       margin: 0;
       padding: 20px;
       transition: background 0.3s ease;
@@ -53,14 +66,14 @@
     .container {
       max-width: 900px;
       margin: 0 auto;
-      background: #fff;
+      background: rgba(255,255,255,0.95);
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       position: relative;
       overflow: hidden;
     }
-    /* زر تبديل اللغة */
+    /* زر تبديل اللغة بشكل أيقونة */
     .lang-toggle-btn {
       position: absolute;
       top: 15px;
@@ -70,13 +83,14 @@
       color: #fff;
       border: none;
       border-radius: 4px;
-      padding: 5px 10px;
+      padding: 8px 10px;
       cursor: pointer;
       transition: background 0.3s ease, transform 0.3s ease;
+      font-size: 18px;
     }
     .lang-toggle-btn:hover {
       background: #2980b9;
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
     /* تنسيق ألسنة التنقل */
     .tab-nav {
@@ -188,7 +202,6 @@
     .mulberry-ceo {
       font-weight: bold;
       margin-right: 10px;
-      /* تأثير تدرج لوني للنص */
       background: linear-gradient(to right, blue, purple);
       -webkit-background-clip: text;
       color: transparent;
@@ -196,8 +209,7 @@
     .chat-area {
       height: 400px;
       overflow-y: auto;
-      background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
-      background-size: cover;
+      background: rgba(255,255,255,0.8);
       padding: 10px;
       border-radius: 8px;
       margin-bottom: 10px;
@@ -300,7 +312,7 @@
       background: #2980b9;
       transform: scale(1.03);
     }
-    /* استجابة */
+    /* استجابة لجميع الأجهزة */
     @media (max-width: 768px) {
       .container { padding: 20px; }
       .header { flex-direction: column; align-items: flex-start; }
@@ -311,6 +323,12 @@
   </style>
 </head>
 <body>
+  <!-- خلفية الفيديو -->
+  <video autoplay muted loop id="bgVideo">
+    <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
+    متصفحك لا يدعم تشغيل الفيديو.
+  </video>
+  
   <div class="header">
     <div class="header-left">
       <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="صورة الموظف">
@@ -319,8 +337,8 @@
     <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
   </div>
   <div class="container">
-    <!-- زر تبديل اللغة -->
-    <button id="langToggle" class="lang-toggle-btn" onclick="toggleLanguage()">ترجمة إلى الإنجليزية</button>
+    <!-- زر تبديل اللغة (أيقونة) -->
+    <button id="langToggle" class="lang-toggle-btn" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
     <!-- ألسنة التنقل -->
     <div class="tab-nav">
       <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
@@ -385,7 +403,8 @@
       <div class="account-settings">
         <h3 id="settingsHeader">إعدادات الحساب</h3>
         <label id="usernameLabel" for="accUsername">تغيير اسم المستخدم:</label>
-        <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد">
+        <!-- تحويل قيمة المدخل دائمًا إلى أحرف صغيرة -->
+        <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد" oninput="this.value = this.value.toLowerCase()">
         <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
         <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
         <label id="photoLabel" for="accPhoto">تغيير الصورة الشخصية:</label>
@@ -440,7 +459,7 @@
         changePassword: "تغيير كلمة المرور:",
         changePhoto: "تغيير الصورة الشخصية:",
         updateSettings: "تحديث الإعدادات",
-        langToggle: "ترجمة إلى الإنجليزية",
+        langToggle: "",
         chatInputPlaceholder: "اكتب رسالتك..."
       },
       en: {
@@ -469,7 +488,7 @@
         changePassword: "Change Password:",
         changePhoto: "Change Personal Photo:",
         updateSettings: "Update Settings",
-        langToggle: "Translate to Arabic",
+        langToggle: "",
         chatInputPlaceholder: "Type your message..."
       }
     };
@@ -482,7 +501,7 @@
     }
     document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
 
-    // تحديث نصوص الواجهة بناءً على اللغة الحالية
+    // تحديث النصوص الثابتة للواجهة بناءً على اللغة الحالية
     function updateStaticTexts() {
       document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
       document.querySelector('.logout-btn').textContent = translations[currentLanguage].logout;
@@ -501,7 +520,6 @@
       document.getElementById('photoLabel').textContent = translations[currentLanguage].changePhoto;
       document.getElementById('updateSettingsBtn').textContent = translations[currentLanguage].updateSettings;
       document.getElementById('employeeChatInput').setAttribute("placeholder", translations[currentLanguage].chatInputPlaceholder);
-      document.getElementById('langToggle').textContent = translations[currentLanguage].langToggle;
     }
     updateStaticTexts();
 
