@@ -107,10 +107,13 @@
 </head>
 <body>
   <!-- فيديو الخلفية بدون عناصر تحكم -->
-  <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="auto" id="bg-video">
-  <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
-  متصفحك لا يدعم الفيديو.
-</video>
+ <div id="video-wrapper" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;">
+  <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="auto" id="bg-video" style="width: 100%; height: 100%; object-fit: cover;">
+    <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
+    متصفحك لا يدعم الفيديو.
+  </video>
+</div>
+
 
 
 
