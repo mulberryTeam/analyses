@@ -16,16 +16,21 @@
       font-family: 'Roboto', sans-serif;
       direction: rtl;
     }
-    /* تنسيق فيديو الخلفية بحيث لا يكون قابل للتفاعل */
-    #bg-video {
+    /* غلاف الفيديو بحيث يكون غير قابل للتفاعل */
+    #video-wrapper {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      z-index: -1;
       pointer-events: none;
+      z-index: -1;
+    }
+    /* تنسيق الفيديو داخل الغلاف */
+    #bg-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     /* تنسيق حاوية تسجيل الدخول */
     .login-container {
@@ -56,7 +61,7 @@
       margin-bottom: 20px;
       font-size: 1.5em;
     }
-    /* تنسيق العبارة بخط مميز مع تدرج لوني */
+    /* تنسيق العبارة بخط عربي مميز مع تدرج لوني */
     .company-info {
       font-family: 'Cairo', sans-serif;
       font-size: 1.1em;
@@ -106,16 +111,13 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <!-- فيديو الخلفية بدون عناصر تحكم -->
- <div id="video-wrapper" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;">
-  <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="auto" id="bg-video" style="width: 100%; height: 100%; object-fit: cover;">
-    <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
-    متصفحك لا يدعم الفيديو.
-  </video>
-</div>
-
-
-
+  <!-- غلاف الفيديو -->
+  <div id="video-wrapper">
+    <video autoplay muted loop playsinline webkit-playsinline disablePictureInPicture preload="auto" id="bg-video">
+      <source src="https://cdn.dribbble.com/userupload/28774288/file/large-0f5d92145d706df70e061ebbf838fa27.mp4" type="video/mp4">
+      متصفحك لا يدعم الفيديو.
+    </video>
+  </div>
 
   <div class="login-container">
     <!-- زر الترجمة -->
@@ -241,6 +243,20 @@
 
     // تحديث الصفحة للغة الافتراضية عند التحميل
     updateLanguage();
+
+    // الكشف عن متصفح إنستاجرام داخل التطبيق وتطبيق الخلفية الثابتة
+    if (navigator.userAgent.match(/Instagram/)) {
+      var videoElement = document.getElementById('bg-video');
+      if (videoElement) {
+        videoElement.style.display = 'none';
+      }
+      var videoWrapper = document.getElementById('video-wrapper');
+      if (videoWrapper) {
+        // استبدل الرابط التالي برابط الخلفية الثابتة المناسب لك
+        videoWrapper.style.backgroundImage = "url('https://via.placeholder.com/1920x1080')";
+        videoWrapper.style.backgroundSize = "cover";
+      }
+    }
   </script>
 </body>
 </html>
