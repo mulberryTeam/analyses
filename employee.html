@@ -372,7 +372,8 @@
     <!-- واجهة المحادثة -->
     <div id="conversation" class="employee-tab" style="display: none;">
       <div class="chat-top-bar">
-        <img src="" class="chat-logo" alt="الشعار">
+        <!-- تم تحديث مصدر الصورة بالشعار المطلوب -->
+        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=t1gVfldlQs4Q7kNvgGDhTwg&_nc_oc=Adj0VbX8fv5yoPOdcsjqBL9GNIy4ajjpj6ddcQiOZum3vh9Vz72RYBuXGIFZJ0cdf34&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=Aw0_luP-m6BerF-SDLx7OJF&oh=00_AYDEd-33HfeXo4ClgaEd0Yr3tf-Z2PK4zUHMs6G-twOXKQ&oe=67CB1665" class="chat-logo" alt="الشعار">
         <span id="chatHeader">التواصل مع الشركة الأم</span>
         <span class="mulberry-ceo">Mulberry-CEO</span>
       </div>
@@ -436,7 +437,6 @@
         salesHeader: "بيانات المبيعات والأرباح الخاصة بك",
         tableHeaders: {
           product: "المنتج",
-          original: "السعر الأصلي (₪)",
           sale: "سعر البيع (₪)",
           date: "التاريخ"
         },
@@ -465,7 +465,6 @@
         salesHeader: "Your Sales & Profit Data",
         tableHeaders: {
           product: "Product",
-          original: "Original Price (₪)",
           sale: "Sale Price (₪)",
           date: "Date"
         },
@@ -482,7 +481,7 @@
       }
     };
 
-    // استرجاع اسم الموظف المسجل
+    // استرجاع اسم الموظف المخزن في localStorage
     const employeeName = localStorage.getItem('employeeName');
     if (!employeeName) {
       alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
@@ -539,22 +538,22 @@
       return rate;
     }
 
-    // تحميل بيانات المبيعات مع حساب الأرباح بشكل صحيح
+    // تحميل بيانات المبيعات مع حساب الأرباح (تم حذف عمود السعر الأصلي)
     function loadSalesData() {
-      // أولاً، الحصول على نوع الموظف من Realtime Database
+      // الحصول أولاً على نوع الموظف من Realtime Database
       database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
       .then(empSnapshot => {
         let employeeType = "regular";
         empSnapshot.forEach(child => { employeeType = child.val().type; });
-        // بعد ذلك، جلب بيانات المبيعات الخاصة بالموظف
+        // جلب بيانات المبيعات الخاصة بالموظف
         database.ref('sales').orderByChild('seller').equalTo(employeeName).once('value')
         .then(snapshot => {
           const salesData = snapshot.val() || {};
           let totalSales = 0;
           let totalProfit = 0;
+          // إنشاء الجدول بدون عمود السعر الأصلي
           let tableHTML = `<table><tr>
             <th>${translations[currentLanguage].tableHeaders.product}</th>
-            <th>${translations[currentLanguage].tableHeaders.original}</th>
             <th>${translations[currentLanguage].tableHeaders.sale}</th>
             <th>${translations[currentLanguage].tableHeaders.date}</th>
             </tr>`;
@@ -590,7 +589,6 @@
             totalProfit += rawProfit * percentage;
             tableHTML += `<tr>
               <td>${sale.productName}</td>
-              <td>₪${sale.originalPrice}</td>
               <td>₪${sale.salePrice}</td>
               <td>${new Date(sale.date).toLocaleDateString()}</td>
               </tr>`;
@@ -634,11 +632,14 @@
 
     /* ------------------ واجهة المحادثة ------------------ */
     function loadEmployeeChatMessages() {
+      const currentEmployeeUsername = localStorage.getItem('employeeUsername');
       database.ref('conversation').orderByChild('date').on('value', snapshot => {
         const messagesData = snapshot.val() || {};
         let chatHTML = "";
         for (const key in messagesData) {
           const msg = messagesData[key];
+          // التأكد من مطابقة الرسالة للموظف الحالي
+          if (msg.employeeUsername !== currentEmployeeUsername) continue;
           if (msg.sender === "admin") {
             chatHTML += `<div class="chat-bubble admin">
               <span class="admin-name">${translations[currentLanguage].supportName}</span>
@@ -686,7 +687,6 @@
         const file = fileInput.files[0];
         const reader = new FileReader();
         reader.onloadend = function() {
-          // استخراج بيانات Base64 بدون البادئة
           const base64data = reader.result.split(',')[1];
           const formData = new FormData();
           formData.append("image", base64data);
@@ -718,7 +718,6 @@
         };
         reader.readAsDataURL(file);
       } else {
-        // في حالة عدم رفع صورة جديدة، يتم التحديث مباشرة باستخدام set مع merge:true
         firestore.collection("employees").doc(employeeName).set(updates, { merge: true })
         .then(() => {
           alert("تم تحديث إعدادات الحساب.");
