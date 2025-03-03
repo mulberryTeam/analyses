@@ -12,6 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <!-- إضافة مكتبة Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
   <style>
     /* خلفية الفيديو */
     #bgVideo {
@@ -73,26 +75,7 @@
       position: relative;
       overflow: hidden;
     }
-    /* زر تبديل اللغة بشكل أيقونة */
-    .lang-toggle-btn {
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      z-index: 10;
-      background: #3498db;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      padding: 8px 10px;
-      cursor: pointer;
-      transition: background 0.3s ease, transform 0.3s ease;
-      font-size: 18px;
-    }
-    .lang-toggle-btn:hover {
-      background: #2980b9;
-      transform: scale(1.1);
-    }
-    /* تنسيق ألسنة التنقل */
+    /* قائمة الألسنة */
     .tab-nav {
       display: flex;
       border-bottom: 2px solid #ddd;
@@ -112,6 +95,15 @@
     .tab-nav button.active {
       border-bottom: 3px solid #3498db;
       font-weight: bold;
+    }
+    /* زر الترجمة بلون مميز */
+    #langToggleTab {
+      background: #f39c12;
+      color: #fff;
+      border-radius: 4px;
+    }
+    #langToggleTab:hover {
+      background: #e67e22;
     }
     /* واجهة التحليلات - فلتر المبيعات */
     .filter-section {
@@ -251,13 +243,11 @@
       clear: both;
       word-wrap: break-word;
     }
-    /* فقاعة رسائل الموظف */
     .chat-bubble.employee {
       background: #27ae60;
       color: #fff;
       margin-right: auto;
     }
-    /* فقاعة رسائل الدعم الفني */
     .chat-bubble.admin {
       background: #fff;
       color: #000;
@@ -331,19 +321,18 @@
   
   <div class="header">
     <div class="header-left">
-      <img class="header-logo" id="employeePhotoDisplay" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="صورة الموظف">
+      <img class="header-logo" id="employeePhotoDisplay" src="" alt="صورة الموظف">
       <h1 id="employeeNameDisplay">لوحة الموظف</h1>
     </div>
     <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
   </div>
   <div class="container">
-    <!-- زر تبديل اللغة (أيقونة) -->
-    <button id="langToggle" class="lang-toggle-btn" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
-    <!-- ألسنة التنقل -->
+    <!-- قائمة الألسنة مع زر الترجمة -->
     <div class="tab-nav">
       <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
       <button id="tabConversationBtn" onclick="showEmployeeTab('conversation', event)">المحادثة</button>
       <button id="tabSettingsBtn" onclick="showEmployeeTab('settings', event)">الإعدادات</button>
+      <button id="langToggleTab" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
     </div>
     
     <!-- واجهة التحليلات -->
@@ -383,7 +372,7 @@
     <!-- واجهة المحادثة -->
     <div id="conversation" class="employee-tab" style="display: none;">
       <div class="chat-top-bar">
-        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="الشعار">
+        <img src="" class="chat-logo" alt="الشعار">
         <span id="chatHeader">التواصل مع الشركة الأم</span>
         <span class="mulberry-ceo">Mulberry-CEO</span>
       </div>
@@ -403,7 +392,6 @@
       <div class="account-settings">
         <h3 id="settingsHeader">إعدادات الحساب</h3>
         <label id="usernameLabel" for="accUsername">تغيير اسم المستخدم:</label>
-        <!-- تحويل قيمة المدخل دائمًا إلى أحرف صغيرة -->
         <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد" oninput="this.value = this.value.toLowerCase()">
         <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
         <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
@@ -426,9 +414,10 @@
       appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
       measurementId: "G-853WkH2JK7"
     };
-    const app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    const storage = firebase.storage();
+    // تهيئة Firestore
+    const firestore = firebase.firestore();
 
     // إعداد الترجمة
     let currentLanguage = 'ar';
@@ -534,7 +523,7 @@
 
     // دالة المساعدة للحصول على نسبة البائع المميز
     function getTopSellerRate(empName, saleDate) {
-      let rate = 0.5; // افتراضي للموظف العادي
+      let rate = 0.5; // القيمة الافتراضية للموظف العادي
       for (const key in topSellerDesignations) {
         const des = topSellerDesignations[key];
         if (des.employee === empName) {
@@ -550,12 +539,14 @@
       return rate;
     }
 
-    // تحميل بيانات المبيعات (واجهة التحليلات)
+    // تحميل بيانات المبيعات مع حساب الأرباح بشكل صحيح
     function loadSalesData() {
+      // أولاً، الحصول على نوع الموظف من Realtime Database
       database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
       .then(empSnapshot => {
         let employeeType = "regular";
         empSnapshot.forEach(child => { employeeType = child.val().type; });
+        // بعد ذلك، جلب بيانات المبيعات الخاصة بالموظف
         database.ref('sales').orderByChild('seller').equalTo(employeeName).once('value')
         .then(snapshot => {
           const salesData = snapshot.val() || {};
@@ -590,7 +581,7 @@
             if (!filterFn(sale)) continue;
             totalSales++;
             const rawProfit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
-            let percentage = 0.5;
+            let percentage = 0.5; // القيمة الافتراضية
             if (employeeType === "distinguished") {
               percentage = 0.7;
             } else if (employeeType === "regular") {
@@ -602,7 +593,7 @@
               <td>₪${sale.originalPrice}</td>
               <td>₪${sale.salePrice}</td>
               <td>${new Date(sale.date).toLocaleDateString()}</td>
-            </tr>`;
+              </tr>`;
           }
           tableHTML += "</table>";
           document.getElementById('salesData').innerHTML = tableHTML;
@@ -619,15 +610,24 @@
       document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
     }
 
-    // تحميل صورة الموظف للعرض في الهيدر
+    // تحميل صورة الموظف من Firestore وعرضها
     function loadEmployeePhoto() {
-      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
-      .then(snapshot => {
-        let empPhoto = "";
-        snapshot.forEach(child => { empPhoto = child.val().photo; });
-        if (empPhoto) {
-          document.getElementById('employeePhotoDisplay').src = empPhoto;
+      firestore.collection("employees").doc(employeeName).get()
+      .then(doc => {
+        if (doc.exists) {
+          const empPhoto = doc.data().photo;
+          console.log("Retrieved employee photo URL:", empPhoto);
+          if (empPhoto) {
+            document.getElementById('employeePhotoDisplay').src = empPhoto;
+          } else {
+            console.warn("No photo URL found for employee.");
+          }
+        } else {
+          console.error("Employee document not found.");
         }
+      })
+      .catch(error => {
+        console.error("Error fetching employee photo:", error);
       });
     }
     loadEmployeePhoto();
@@ -640,18 +640,16 @@
         for (const key in messagesData) {
           const msg = messagesData[key];
           if (msg.sender === "admin") {
-            // رسائل الدعم الفني
             chatHTML += `<div class="chat-bubble admin">
               <span class="admin-name">${translations[currentLanguage].supportName}</span>
               <span>${msg.message}</span>
               <div style="font-size:10px;">${new Date(msg.date).toLocaleTimeString()}</div>
-            </div>`;
+              </div>`;
           } else {
-            // رسائل الموظف
             chatHTML += `<div class="chat-bubble employee">
               <span>${msg.message}</span>
               <div style="font-size:10px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
-            </div>`;
+              </div>`;
           }
         }
         document.getElementById('employeeChatMessages').innerHTML = chatHTML;
@@ -679,43 +677,57 @@
       const newUsername = document.getElementById('accUsername').value.trim();
       const newPassword = document.getElementById('accPassword').value.trim();
       const fileInput = document.getElementById('accPhoto');
-      database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
-      .then(snapshot => {
-        let empKey = null;
-        snapshot.forEach(child => { empKey = child.key; });
-        if (!empKey) return;
-        let updates = {};
-        if(newUsername) { updates.username = newUsername; }
-        if(newPassword) { updates.password = newPassword; }
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          const storageRef = storage.ref();
-          const fileRef = storageRef.child('employee_photos/' + Date.now() + "_" + file.name);
-          fileRef.put(file).then(() => {
-            fileRef.getDownloadURL().then(photoURL => {
-              updates.photo = photoURL;
-              database.ref('employees/' + empKey).update(updates);
-              database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
-              .then(snap => {
-                snap.forEach(child => {
-                  child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
-                });
-              });
+      let updates = {};
+      if(newUsername) { updates.username = newUsername; }
+      if(newPassword) { updates.password = newPassword; }
+      
+      // إذا تم اختيار صورة جديدة
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          // استخراج بيانات Base64 بدون البادئة
+          const base64data = reader.result.split(',')[1];
+          const formData = new FormData();
+          formData.append("image", base64data);
+          // استخدام API ImgBB لرفع الصورة
+          fetch("https://api.imgbb.com/1/upload?key=d76282687ea27ed446e7883c853038c8", {
+            method: "POST",
+            body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+            const photoURL = data.data.url;
+            console.log("Uploaded image URL:", photoURL);
+            updates.photo = photoURL;
+            // تحديث أو إنشاء مستند الموظف في Firestore باستخدام set مع merge:true
+            firestore.collection("employees").doc(employeeName).set(updates, { merge: true })
+            .then(() => {
               loadEmployeePhoto();
               alert("تم تحديث إعدادات الحساب.");
+            })
+            .catch(error => {
+              console.error("Error updating Firestore:", error);
+              alert("حدث خطأ أثناء تحديث الإعدادات.");
             });
+          })
+          .catch(error => {
+            console.error("Error uploading image:", error);
+            alert("حدث خطأ أثناء رفع الصورة.");
           });
-        } else {
-          database.ref('employees/' + empKey).update(updates);
-          database.ref('employeeAccounts').orderByChild('name').equalTo(employeeName).once('value')
-          .then(snap => {
-            snap.forEach(child => {
-              child.ref.update({ username: newUsername || child.val().username, password: newPassword || child.val().password });
-            });
-          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // في حالة عدم رفع صورة جديدة، يتم التحديث مباشرة باستخدام set مع merge:true
+        firestore.collection("employees").doc(employeeName).set(updates, { merge: true })
+        .then(() => {
           alert("تم تحديث إعدادات الحساب.");
-        }
-      });
+        })
+        .catch(error => {
+          console.error("Error updating Firestore:", error);
+          alert("حدث خطأ أثناء تحديث الإعدادات.");
+        });
+      }
     }
 
     /* ------------------ تغيير الألسنة ------------------ */
@@ -729,13 +741,9 @@
     /* ------------------ تبديل اللغة ------------------ */
     function toggleLanguage() {
       currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
-      // تحديث النصوص الثابتة
       updateStaticTexts();
-      // تحديث اسم الدعم الفني المستخدم في رسائل المحادثة
       supportNameText = translations[currentLanguage].supportName;
-      // إعادة تحميل بيانات المبيعات لتحديث رؤوس الجدول والنصوص
       loadSalesData();
-      // إعادة تحميل رسائل المحادثة لتحديث اسم الدعم الفني
       loadEmployeeChatMessages();
     }
 
