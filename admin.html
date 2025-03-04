@@ -244,6 +244,13 @@
     .tab-content { animation: fadeIn 0.5s ease-in-out; }
     h2 { text-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
   </style>
+  <script>
+    // منع الدخول إلى الموقع بدون معلومات تسجيل الدخول
+    if (!localStorage.getItem('user')) {
+      // إعادة التوجيه إلى صفحة تسجيل الدخول والتي هي index.html
+      window.location.href = "index.html";
+    }
+  </script>
 </head>
 <body>
   <div class="header">
@@ -254,7 +261,7 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
   <div class="container">
-    <!-- Tab Navigation (تم حذف قسم المحادثات) -->
+    <!-- Tab Navigation -->
     <div class="tab-nav">
       <button class="tab active" onclick="showTab('employees')">Employees</button>
       <button class="tab" onclick="showTab('sales')">Sales</button>
@@ -1231,7 +1238,6 @@
         document.getElementById('customPeriodInputs').style.display = 'block';
       }
     }
-
     function closeEmployeeModal(event) { 
       document.getElementById('employeeModal').style.display = 'none'; 
     }
