@@ -243,120 +243,6 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .tab-content { animation: fadeIn 0.5s ease-in-out; }
     h2 { text-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
-
-    /* Chat Section */
-    .chat-card {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .chat-card:hover { background: #f0f0f0; }
-    .chat-card-photo {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 15px;
-    }
-    .chat-card-info { flex: 1; }
-    .chat-card-name { font-weight: bold; margin-bottom: 5px; }
-    .chat-card-last-message { font-size: 14px; color: #888; }
-    .chat-modal {
-      width: 375px;
-      height: 667px;
-      background: #fff;
-      border-radius: 20px;
-      overflow: hidden;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-    .chat-modal-header {
-      padding: 15px;
-      background: var(--primary-color);
-      color: #fff;
-      display: flex;
-      align-items: center;
-      position: relative;
-    }
-    .chat-modal-header img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-right: 10px;
-    }
-    .chat-modal-header .modal-close {
-      position: absolute;
-      right: 15px;
-      top: 10px;
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .chat-modal-body {
-      flex: 1;
-      background: url('https://via.placeholder.com/375x500') center center / cover no-repeat;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    .chat-modal-footer {
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      border-top: 1px solid #eee;
-    }
-    .chat-modal-footer input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 20px;
-    }
-    .chat-modal-footer button {
-      margin-left: 10px;
-      padding: 10px 15px;
-      background: var(--secondary-color);
-      color: #fff;
-      border: none;
-      border-radius: 20px;
-    }
-    .chat-bubble {
-      position: relative;
-      max-width: 70%;
-      padding: 10px;
-      border-radius: 15px;
-      margin-bottom: 10px;
-      clear: both;
-    }
-    .chat-bubble.admin {
-      background: var(--success-color);
-      color: #fff;
-      float: right;
-    }
-    .chat-bubble.employee {
-      background: #fff;
-      color: #000;
-      float: left;
-      border: 1px solid #ddd;
-    }
-    .delete-message {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      background: rgba(255,255,255,0.7);
-      border: none;
-      border-radius: 50%;
-      font-size: 10px;
-      cursor: pointer;
-      padding: 2px 4px;
-      display: none;
-    }
-    .chat-bubble:hover .delete-message {
-      display: block;
-    }
   </style>
 </head>
 <body>
@@ -368,7 +254,7 @@
     <button class="logout-btn" onclick="logout()">Logout</button>
   </div>
   <div class="container">
-    <!-- Tab Navigation -->
+    <!-- Tab Navigation (تم حذف قسم المحادثات) -->
     <div class="tab-nav">
       <button class="tab active" onclick="showTab('employees')">Employees</button>
       <button class="tab" onclick="showTab('sales')">Sales</button>
@@ -377,7 +263,6 @@
       <button class="tab" onclick="showTab('employeeAccounts')">Employee Accounts</button>
       <button class="tab" onclick="showTab('employeeLogins')">Employee Logins</button>
       <button class="tab" onclick="showTab('dismissedEmployees')">Dismissed Employees</button>
-      <button class="tab" onclick="showTab('chats')">المحادثات</button>
     </div>
 
     <!-- Employees Tab -->
@@ -599,12 +484,6 @@
       <h2>Dismissed Employees</h2>
       <div id="dismissedList"></div>
     </div>
-
-    <!-- Chats Tab -->
-    <div id="chats" class="tab-content" style="display: none;">
-      <h2>محادثات الموظفين</h2>
-      <div id="chatList"></div>
-    </div>
   </div>
 
   <!-- Employee Modal for Detailed Data -->
@@ -612,24 +491,6 @@
     <div class="modal-content" onclick="event.stopPropagation()">
       <span class="modal-close" onclick="closeEmployeeModal(event)">&times;</span>
       <div id="employeeModalContent"></div>
-    </div>
-  </div>
-
-  <!-- Chat Modal -->
-  <div id="chatModal" class="modal" onclick="closeChatModal()">
-    <div class="chat-modal" onclick="event.stopPropagation()">
-      <div class="chat-modal-header">
-        <img id="chatModalHeaderPhoto" src="https://via.placeholder.com/40" alt="Employee Photo">
-        <span id="chatModalHeaderName">Employee Name</span>
-        <span class="modal-close" onclick="closeChatModal()">&times;</span>
-      </div>
-      <div id="chatModalBody" class="chat-modal-body">
-        <!-- Chat messages will be loaded here -->
-      </div>
-      <div class="chat-modal-footer">
-        <input type="text" id="chatInput" placeholder="اكتب رسالتك...">
-        <button onclick="sendChatMessage()">إرسال</button>
-      </div>
     </div>
   </div>
 
@@ -667,7 +528,7 @@
       renderDesignationList();
     });
 
-    // Global employee map and data for chats
+    // Global employee map and data for use in lists
     window.employeeMap = {};
     window.employeesData = {}; // Keyed by Firebase employee key
     database.ref('employees').on('value', snapshot => {
@@ -734,7 +595,6 @@
         })
         .catch(error => { console.error("Error fetching employee photo for", emp.name, error); });
       }
-      renderChatList();
     });
 
     // Dismissed Employees Listener
@@ -1371,51 +1231,10 @@
         document.getElementById('customPeriodInputs').style.display = 'block';
       }
     }
-    function showEmployeeModal(empName) {
-      let employee = null;
-      database.ref('employees').orderByChild('name').equalTo(empName).once('value').then(snapshot => {
-        snapshot.forEach(child => { employee = child.val(); });
-        if (!employee) return;
-        let totalProfit = 0;
-        let salesCount = 0;
-        let salesDetailsHTML = "<table><tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Date</th><th>Actions</th></tr>";
-        database.ref('sales').orderByChild('seller').equalTo(empName).once('value').then(snapSales => {
-          const salesData = snapSales.val() || {};
-          for (const saleKey in salesData) {
-            const sale = salesData[saleKey];
-            if (!sale.date.startsWith(document.getElementById('employeeMonth').value)) continue;
-            const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
-            totalProfit += profit * getTopSellerRate(empName, sale.date);
-            salesCount++;
-            salesDetailsHTML += `<tr>
-              <td>${sale.productName}</td>
-              <td>₪${sale.originalPrice}</td>
-              <td>₪${sale.salePrice}</td>
-              <td>${new Date(sale.date).toLocaleDateString()}</td>
-              <td>
-                <button class="edit-btn" onclick="editSale('${saleKey}')">Edit</button>
-                <button class="delete-btn" onclick="deleteRecord('sales', '${saleKey}')">Delete</button>
-              </td>
-            </tr>`;
-          }
-          salesDetailsHTML += "</table>";
-          const modalContent = document.getElementById('employeeModalContent');
-          modalContent.innerHTML = `
-            <img class="employee-photo-modal" src="${employee.image ? employee.image : 'https://via.placeholder.com/600x300'}" alt="${employee.name}">
-            <h3>Employee Details</h3>
-            <p><strong>Name:</strong> ${employee.name}</p>
-            <p><strong>Phone:</strong> ${employee.phone}</p>
-            <p><strong>Type:</strong> ${employee.type.charAt(0).toUpperCase() + employee.type.slice(1)}</p>
-            <p><strong>Total Sales:</strong> ${salesCount}</p>
-            <p><strong>Total Profit:</strong> ₪${totalProfit.toFixed(2)}</p>
-            <h4>Sales History:</h4>
-            ${salesDetailsHTML}
-          `;
-          document.getElementById('employeeModal').style.display = 'flex';
-        });
-      });
+
+    function closeEmployeeModal(event) { 
+      document.getElementById('employeeModal').style.display = 'none'; 
     }
-    function closeEmployeeModal(event) { document.getElementById('employeeModal').style.display = 'none'; }
     function handleCreateEmployeeAccount(event) {
       event.preventDefault();
       const employeeNameAcc = document.getElementById('accountEmployeeSelect').value;
@@ -1432,83 +1251,6 @@
         document.querySelector('#employeeAccounts form').reset();
       })
       .catch(error => { showAlert('error', `Error: ${error.message}`, 'accountAlert'); });
-    }
-
-    /* ------------------ Chat System Functions ------------------ */
-    window.chatData = {};
-    let currentChatEmployeeKey = null;
-    database.ref('chats').on('value', snapshot => {
-      window.chatData = snapshot.val() || {};
-      renderChatList();
-    });
-    function renderChatList() {
-      const chatListContainer = document.getElementById('chatList');
-      let html = "";
-      for (let key in window.employeesData) {
-        const emp = window.employeesData[key];
-        let lastMessage = "";
-        if (window.chatData && window.chatData[key] && window.chatData[key].lastMessage) {
-          lastMessage = window.chatData[key].lastMessage;
-        }
-        let photo = emp.image ? emp.image : 'https://via.placeholder.com/50';
-        html += `<div class="chat-card" data-emp-key="${key}" onclick="openChatModal('${key}')">
-          <img class="chat-card-photo" src="${photo}" alt="${emp.name}">
-          <div class="chat-card-info">
-              <div class="chat-card-name">${emp.name}</div>
-              <div class="chat-card-last-message">${lastMessage}</div>
-          </div>
-       </div>`;
-      }
-      chatListContainer.innerHTML = html;
-    }
-    function openChatModal(empKey) {
-      currentChatEmployeeKey = empKey;
-      const emp = window.employeesData[empKey];
-      document.getElementById('chatModalHeaderName').textContent = emp.name;
-      document.getElementById('chatModalHeaderPhoto').src = emp.image ? emp.image : 'https://via.placeholder.com/40';
-      document.getElementById('chatModal').style.display = 'flex';
-      loadChatMessages(empKey);
-    }
-    function loadChatMessages(empKey) {
-      database.ref('chats/' + empKey + '/messages').once('value').then(snapshot => {
-        const messagesData = snapshot.val() || {};
-        let messagesArray = [];
-        for (const msgKey in messagesData) {
-          messagesArray.push({ id: msgKey, ...messagesData[msgKey] });
-        }
-        messagesArray.sort((a, b) => a.timestamp - b.timestamp);
-        let messagesHTML = "";
-        messagesArray.forEach(msg => {
-          let deleteBtn = `<button class="delete-message" onclick="deleteChatMessage('${msg.id}', '${empKey}')">×</button>`;
-          if (msg.sender === 'admin') {
-            messagesHTML += `<div class="chat-bubble admin" data-msgid="${msg.id}">${msg.text}${deleteBtn}</div>`;
-          } else {
-            messagesHTML += `<div class="chat-bubble employee" data-msgid="${msg.id}">${msg.text}${deleteBtn}</div>`;
-          }
-        });
-        document.getElementById('chatModalBody').innerHTML = messagesHTML;
-        document.getElementById('chatModalBody').scrollTop = document.getElementById('chatModalBody').scrollHeight;
-      });
-    }
-    function deleteChatMessage(messageId, empKey) {
-      if(confirm("Are you sure you want to delete this message?")) {
-        database.ref('chats/' + empKey + '/messages/' + messageId).remove();
-      }
-    }
-    function sendChatMessage() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if (!text) return;
-      const newMsg = { sender: 'admin', text: text, timestamp: Date.now() };
-      const chatRef = database.ref('chats/' + currentChatEmployeeKey + '/messages');
-      chatRef.push(newMsg).then(() => {
-          database.ref('chats/' + currentChatEmployeeKey).update({ lastMessage: text });
-          input.value = "";
-          loadChatMessages(currentChatEmployeeKey);
-      }).catch(err => { console.error("Error sending message", err); });
-    }
-    function closeChatModal() {
-      document.getElementById('chatModal').style.display = 'none';
     }
 
     /* ------------------ Dismissed Employee Modal & Rehire ------------------ */
