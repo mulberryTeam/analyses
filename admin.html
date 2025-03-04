@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-analytics-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
+  <!-- Firestore-compat library for Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --primary-color: #2c3e50;
@@ -18,6 +19,28 @@
       --error-color: #e74c3c;
       --success-color: #27ae60;
     }
+    /* General Modal Styles (for all modals including dismissed employee modal) */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
     /* Global Styles */
     body { 
       font-family: 'Roboto', sans-serif;
@@ -63,11 +86,7 @@
       transition: transform 0.3s;
     }
     .container:hover { transform: scale(1.01); }
-    .tabs { 
-      margin-bottom: 20px;
-      border-bottom: 2px solid #eee;
-      overflow-x: auto;
-    }
+    .tab-nav { margin-bottom: 20px; border-bottom: 2px solid #eee; overflow-x: auto; }
     .tab { 
       padding: 12px 24px; 
       cursor: pointer; 
@@ -102,8 +121,6 @@
       transition: border-color 0.3s;
     }
     input:focus, select:focus { border-color: var(--secondary-color); outline: none; }
-    /* New file input style for photo upload */
-    input[type="file"] { margin: 8px 0; }
     button { 
       padding: 12px 25px;
       background: var(--secondary-color);
@@ -148,34 +165,41 @@
     }
     .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    
     /* Employee Cards */
     .employee-cards {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
+      justify-content: center;
     }
     .employee-card {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      width: 200px;
-      padding: 15px;
+      width: 250px;
+      padding: 20px;
       text-align: center;
       transition: transform 0.3s;
       position: relative;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .employee-card:hover { transform: translateY(-5px); }
-    .employee-card img {
-      border-radius: 50%;
+    .employee-photo {
       width: 100px;
       height: 100px;
-      cursor: pointer;
+      border-radius: 50%;
       object-fit: cover;
+      margin-bottom: 15px;
     }
-    .employee-name { font-size: 18px; font-weight: 500; margin-top: 10px; }
+    .employee-name { font-size: 18px; font-weight: 500; margin-bottom: 5px; }
     .employee-type { font-size: 14px; color: var(--secondary-color); margin-bottom: 10px; }
     .employee-actions button { margin: 5px; font-size: 12px; padding: 8px 12px; }
-    /* Analytics Styles */
+    
+    /* Analytics and other sections remain unchanged */
     .analytics-options { margin-bottom: 20px; }
     .analytics-options button { margin-right: 10px; }
     .analytics-card {
@@ -190,140 +214,118 @@
     .analytics-card:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
     .analytics-card label { font-weight: 500; margin-right: 5px; }
     .analytics-card input, .analytics-card select { margin-bottom: 10px; }
-    /* Custom Period Inputs */
     .custom-period { display: none; margin-top: 10px; }
     .custom-period input { width: 140px; margin-right: 10px; }
-    /* Dismissed Employees Table */
     #dismissedEmployees table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     #dismissedEmployees th, #dismissedEmployees td { padding: 10px; border: 1px solid #ddd; }
     #dismissedEmployees th { background: var(--primary-color); color: #fff; }
-    /* Fade in Animation */
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .tab-content { animation: fadeIn 0.5s ease-in-out; }
     h2 { text-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
-    /* Modal Styles */
-    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: #fff; padding: 20px; border-radius: 8px; max-width: 600px; width: 90%; position: relative; }
-    .modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; font-weight: bold; cursor: pointer; }
-    .modal h3 { margin-top: 0; }
-    .modal table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .modal table, .modal th, .modal td { border: 1px solid #eee; }
-    .modal th, .modal td { padding: 10px; text-align: left; }
-    /* Top Seller Designation Tab */
-    .designation-form { padding: 20px; background: #f8f9fa; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    .designation-form input { width: 200px; margin-right: 10px; }
-    .designation-form button { margin-top: 10px; }
-    .designation-list { margin-top: 20px; }
-    .designation-item { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 6px; }
-    /* Chat Interface Styles for Admin Page */
-    .chat-top-bar {
+
+    /* Chat Section (remains as before) */
+    .chat-card {
       display: flex;
       align-items: center;
-      background: #f1f1f1;
       padding: 10px;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    .chat-logo {
-      width: 30px;
-      height: 30px;
+    .chat-card:hover { background: #f0f0f0; }
+    .chat-card-photo {
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .chat-card-info { flex: 1; }
+    .chat-card-name { font-weight: bold; margin-bottom: 5px; }
+    .chat-card-last-message { font-size: 14px; color: #888; }
+    .chat-modal {
+      width: 375px;
+      height: 667px;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .chat-modal-header {
+      padding: 15px;
+      background: var(--primary-color);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+    .chat-modal-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
       margin-right: 10px;
     }
-    .chat-area {
-      height: 400px;
+    .chat-modal-header .modal-close {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .chat-modal-body {
+      flex: 1;
+      background: url('https://via.placeholder.com/375x500') center center / cover no-repeat;
+      padding: 10px;
       overflow-y: auto;
-      background: url('https://t3.ftcdn.net/jpg/01/99/79/88/360_F_199798806_PAFfWGapie6Mk8igqKHbhIIa9LwQcvQr.jpg') no-repeat center center;
-      background-size: cover;
-      padding: 10px;
     }
-    .chat-bottom-bar {
+    .chat-modal-footer {
+      padding: 10px;
       display: flex;
-      padding: 10px;
-      border-top: 1px solid #ddd;
+      align-items: center;
+      border-top: 1px solid #eee;
     }
-    .chat-bottom-bar input[type="text"] {
+    .chat-modal-footer input {
       flex: 1;
       padding: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid #ddd;
       border-radius: 20px;
-      margin-right: 10px;
     }
-    .chat-bottom-bar button {
-      background: transparent;
+    .chat-modal-footer button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      background: var(--secondary-color);
+      color: #fff;
       border: none;
-      cursor: pointer;
-      font-size: 20px;
+      border-radius: 20px;
     }
     .chat-bubble {
       max-width: 70%;
       padding: 10px;
-      border-radius: 10px;
+      border-radius: 15px;
       margin-bottom: 10px;
-      position: relative;
       clear: both;
     }
-    /* Admin-sent messages: green bubble */
     .chat-bubble.admin {
       background: var(--success-color);
       color: #fff;
-      margin-left: auto;
+      float: right;
     }
-    /* Employee-sent messages: white bubble with employee's name and photo */
     .chat-bubble.employee {
       background: #fff;
       color: #000;
+      float: left;
       border: 1px solid #ddd;
-      margin-right: auto;
-      padding-left: 50px;
-    }
-    .chat-bubble.employee .emp-photo {
-      position: absolute;
-      left: 10px;
-      top: 10px;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-    }
-    .chat-bubble.employee .emp-name {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-    }
-    /* Delete button inside chat bubble (only admin sees this) */
-    .chat-bubble button.delete-msg {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: transparent;
-      border: none;
-      color: #fff;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container { padding: 20px; }
-      .tabs { flex-direction: column; }
-      .tab { width: 100%; text-align: center; margin-bottom: 5px; }
-      input[type="text"], 
-      input[type="tel"],
-      input[type="number"],
-      input[type="month"],
-      input[type="date"],
-      input[type="password"],
-      select, input[type="file"] { width: 100%; }
-      .employee-cards { flex-direction: column; align-items: center; }
-      .employee-card { width: 100%; }
-      table, th, td { font-size: 14px; }
     }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="header-left">
-      <!-- Header uses the same small, rounded image (from login page) -->
       <img class="header-logo" src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" alt="Logo">
-      <!-- Changed header text to "Admin Dashboard" -->
       <h1 id="employeeNameDisplay">Admin Dashboard</h1>
     </div>
     <button class="logout-btn" onclick="logout()">Logout</button>
@@ -337,8 +339,8 @@
       <button class="tab" onclick="showTab('topSellerDesignation')">Top Seller Designation</button>
       <button class="tab" onclick="showTab('employeeAccounts')">Employee Accounts</button>
       <button class="tab" onclick="showTab('employeeLogins')">Employee Logins</button>
-      <button class="tab" onclick="showTab('employeeMessages')">Employee Messages</button>
       <button class="tab" onclick="showTab('dismissedEmployees')">Dismissed Employees</button>
+      <button class="tab" onclick="showTab('chats')">المحادثات</button>
     </div>
 
     <!-- Employees Tab -->
@@ -354,8 +356,6 @@
             <option value="regular">Regular</option>
             <option value="distinguished">Distinguished</option>
           </select>
-          <!-- File upload for photo -->
-          <input type="file" id="empPhotoFile" accept="image/*">
           <button type="submit" id="employeeSubmitBtn">Add Employee</button>
           <button type="button" onclick="cancelEdit()" style="display: none;" id="cancelBtn">Cancel</button>
         </form>
@@ -513,27 +513,16 @@
       </table>
     </div>
 
-    <!-- Employee Messages Tab (Conversation Interface) -->
-    <div id="employeeMessages" class="tab-content" style="display: none;">
-      <div class="chat-top-bar">
-        <img src="https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25" class="chat-logo" alt="Logo">
-        <span>Communication with Parent Company</span>
-      </div>
-      <div class="chat-area">
-        <div id="adminChatMessages">
-          <!-- Chat messages will load here -->
-        </div>
-      </div>
-      <div class="chat-bottom-bar">
-        <input type="text" id="adminChatInput" placeholder="Type your message...">
-        <button onclick="sendAdminChatMessage()"><i class="send-icon">✈️</i></button>
-      </div>
-    </div>
-
     <!-- Dismissed Employees Tab -->
     <div id="dismissedEmployees" class="tab-content" style="display: none;">
       <h2>Dismissed Employees</h2>
       <div id="dismissedList"></div>
+    </div>
+
+    <!-- Chats Tab -->
+    <div id="chats" class="tab-content" style="display: none;">
+      <h2>محادثات الموظفين</h2>
+      <div id="chatList"></div>
     </div>
   </div>
 
@@ -542,6 +531,32 @@
     <div class="modal-content" onclick="event.stopPropagation()">
       <span class="modal-close" onclick="closeEmployeeModal(event)">&times;</span>
       <div id="employeeModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Chat Modal (نافذة المحادثة المنبثقة) -->
+  <div id="chatModal" class="modal" onclick="closeChatModal()">
+    <div class="chat-modal" onclick="event.stopPropagation()">
+      <div class="chat-modal-header">
+        <img id="chatModalHeaderPhoto" src="https://via.placeholder.com/40" alt="Employee Photo">
+        <span id="chatModalHeaderName">Employee Name</span>
+        <span class="modal-close" onclick="closeChatModal()">&times;</span>
+      </div>
+      <div id="chatModalBody" class="chat-modal-body">
+        <!-- Chat messages will be loaded here -->
+      </div>
+      <div class="chat-modal-footer">
+        <input type="text" id="chatInput" placeholder="اكتب رسالتك...">
+        <button onclick="sendChatMessage()">إرسال</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dismissed Employee Modal (لعرض معلومات الموظف المفصول ومبيعاته) -->
+  <div id="dismissedEmployeeModal" class="modal" onclick="closeDismissedEmployeeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <span class="modal-close" onclick="closeDismissedEmployeeModal(event)">&times;</span>
+      <div id="dismissedEmployeeModalContent"></div>
     </div>
   </div>
 
@@ -557,36 +572,35 @@
       appId: "1:38968485922:web:667832a4aa77599ba8a6fb",
       measurementId: "G-853WkH2JK7"
     };
-    const app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    const storage = firebase.storage();
+    const firestore = firebase.firestore();
 
-    // For Admin, we no longer rely on localStorage employeeName.
-    // Instead, we display "Admin Dashboard" in the header.
+    // Set header title
     document.getElementById('employeeNameDisplay').textContent = "Admin Dashboard";
 
-    // Global variable for Top Seller designations
+    // Global variable for top seller designations
     let topSellerDesignations = {};
     database.ref('topSellerDesignations').on('value', snapshot => {
       topSellerDesignations = snapshot.val() || {};
       renderDesignationList();
     });
 
-    // Global mapping for all employees keyed by employee username.
+    // Global employee map and data for chats
     window.employeeMap = {};
+    window.employeesData = {}; // Keyed by Firebase employee key
     database.ref('employees').on('value', snapshot => {
       const employeesData = snapshot.val() || {};
+      window.employeesData = employeesData;
       window.employeeMap = {};
       const employeeCardsContainer = document.getElementById('employeeCards');
       let cardsHTML = "";
       for (const key in employeesData) {
         const emp = employeesData[key];
-        // Key the employee map by their username for conversation lookups.
         window.employeeMap[emp.username] = emp;
-        const photoURL = emp.photo ? emp.photo : "https://scontent.fjrs28-1.fna.fbcdn.net/v/t39.30808-6/471747354_122099892014715775_3226043878643219535_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=NY9kpH5dCp8Q7kNvgFjPcDR&_nc_oc=AdichrKT9DoTy28yGZ98KDYMDPVCdiRNCf4QOJNrytAGaTcWPZbmjYDbg35UHLHA4eU&_nc_zt=23&_nc_ht=scontent.fjrs28-1.fna&_nc_gid=AFWUQlD-1ziVp7La0qO1Gkw&oh=00_AYBjZ96CDyy3OoXa7Nlt4mAmwqF7vNSoFSWYjC_2Li8VrQ&oe=67C83B25";
         cardsHTML += `
-          <div class="employee-card">
-            <img src="${photoURL}" alt="${emp.name}" onclick="showEmployeeModal('${emp.name}')">
+          <div class="employee-card" onclick="showEmployeeModal('${emp.name}')">
+            <img id="employee-photo-${key}" class="employee-photo" src="https://via.placeholder.com/200x150" alt="${emp.name}">
             <div class="employee-name">${emp.name}</div>
             <div class="employee-type">${emp.type.charAt(0).toUpperCase() + emp.type.slice(1)}</div>
             <div class="employee-actions">
@@ -598,26 +612,70 @@
       }
       employeeCardsContainer.innerHTML = cardsHTML;
       
+      // Update select elements
       const employeeSelect = document.getElementById('employeeSelect');
       employeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>';
       const accountEmployeeSelect = document.getElementById('accountEmployeeSelect');
       if(accountEmployeeSelect) { accountEmployeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>'; }
       const designateEmployeeSelect = document.getElementById('designateEmployeeSelect');
       if(designateEmployeeSelect) { designateEmployeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>'; }
-      Object.values(employeesData).forEach(emp => {
-        const option1 = document.createElement('option');
-        option1.value = emp.name;
-        option1.textContent = emp.name;
-        employeeSelect.appendChild(option1);
-        const option2 = document.createElement('option');
+      for (const key in employeesData) {
+        const emp = employeesData[key];
+        let option = document.createElement('option');
+        option.value = emp.name;
+        option.textContent = emp.name;
+        employeeSelect.appendChild(option);
+        let option2 = document.createElement('option');
         option2.value = emp.name;
         option2.textContent = emp.name;
         if(accountEmployeeSelect) { accountEmployeeSelect.appendChild(option2); }
-        const option3 = document.createElement('option');
+        let option3 = document.createElement('option');
         option3.value = emp.name;
         option3.textContent = emp.name;
         if(designateEmployeeSelect) { designateEmployeeSelect.appendChild(option3); }
-      });
+      }
+      
+      // Retrieve employee images from Firestore
+      for (const key in employeesData) {
+        const emp = employeesData[key];
+        firestore.collection("employees").doc(emp.name).get()
+        .then(doc => {
+          if (doc.exists) { 
+            const empPhoto = doc.data().photo;
+            if (empPhoto) {
+              document.getElementById(`employee-photo-${key}`).src = empPhoto;
+              window.employeeMap[emp.username].image = empPhoto;
+              window.employeesData[key].image = empPhoto;
+            }
+          } else {
+            console.error("Employee document not found for:", emp.name);
+          }
+        })
+        .catch(error => { console.error("Error fetching employee photo for", emp.name, error); });
+      }
+      renderChatList();
+    });
+
+    // Dismissed Employees Listener
+    database.ref('dismissedEmployees').on('value', snapshot => {
+      const dismissedData = snapshot.val() || {};
+      const dismissedList = document.getElementById('dismissedList');
+      let dismissedHTML = "<table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
+      for (const key in dismissedData) {
+        const emp = dismissedData[key];
+        dismissedHTML += `<tr>
+          <td>${emp.name}</td>
+          <td>${emp.type}</td>
+          <td>${emp.phone}</td>
+          <td>
+            <button onclick="openDismissedEmployeeModal('${key}')">عرض المعلومات</button>
+            <button onclick="rehireEmployee('${key}')">إعادة توظيف</button>
+            <button class="delete-btn" onclick="permanentlyDeleteEmployee('${key}')">Permanently Delete</button>
+          </td>
+        </tr>`;
+      }
+      dismissedHTML += "</tbody></table>";
+      dismissedList.innerHTML = dismissedHTML;
     });
 
     // Logout function
@@ -626,7 +684,7 @@
       window.location.href = "index.html";
     }
 
-    // Tab Navigation
+    // Tab navigation
     function showTab(tabName) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
       document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -634,7 +692,7 @@
       event.currentTarget.classList.add('active');
     }
 
-    // Employee Management
+    // Employee management functions
     let editingEmployeeKey = null;
     async function handleEmployeeSubmit(event) {
       event.preventDefault();
@@ -651,15 +709,6 @@
       }
       try {
         let empData = { name, phone, type };
-        const fileInput = document.getElementById('empPhotoFile');
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          const storageRef = storage.ref();
-          const fileRef = storageRef.child('employee_photos/' + Date.now() + "_" + file.name);
-          await fileRef.put(file);
-          const photoURL = await fileRef.getDownloadURL();
-          empData.photo = photoURL;
-        }
         if (editingEmployeeKey) {
           await database.ref(`employees/${editingEmployeeKey}`).update(empData);
           showAlert('success', 'Employee updated successfully!', 'empAlert');
@@ -690,20 +739,31 @@
       document.getElementById('employeeSubmitBtn').textContent = 'Add Employee';
       document.getElementById('cancelBtn').style.display = 'none';
     }
+    // عند حذف موظف، نقله إلى قائمة المفصولين ونقل مبيعاته
     async function deleteRecord(type, key) {
       if (!confirm('Are you sure you want to delete this record?')) return;
       if (type === 'employees') {
         const empRef = database.ref(`employees/${key}`);
         const snapshot = await empRef.once('value');
         const empData = snapshot.val();
-        if (empData) { await database.ref('dismissedEmployees').push(empData); }
+        if (empData) { 
+          const salesSnapshot = await database.ref('sales').orderByChild('seller').equalTo(empData.name).once('value');
+          const salesData = salesSnapshot.val();
+          if (salesData) {
+            empData.sales = salesData;
+            for (let saleKey in salesData) {
+              await database.ref(`sales/${saleKey}`).remove();
+            }
+          }
+          await database.ref('dismissedEmployees').push(empData);
+        }
         await empRef.remove();
       } else {
         await database.ref(`${type}/${key}`).remove();
       }
     }
 
-    // Sales Management
+    // Sales management functions
     let editingSaleKey = null;
     function toggleEmployeeSelect() {
       const sellerType = document.getElementById('sellerType').value;
@@ -778,8 +838,6 @@
       document.getElementById('employeeSelect').style.display = 'none';
       document.getElementById('employeeSelect').required = false;
     }
-
-    // Real-time Updates for Employees, Sales, etc.
     database.ref('sales').on('value', snapshot => {
       const salesData = snapshot.val() || {};
       const tbody = document.getElementById('salesList');
@@ -797,9 +855,8 @@
         </tr>
       `).join('');
     });
-    database.ref('employeeMessages').on('value', snapshot => {
-      // This listener is kept for other potential uses
-    });
+
+    // Employee Accounts listener
     database.ref('employeeAccounts').on('value', snapshot => {
       const accountsData = snapshot.val() || {};
       const loginList = document.getElementById('loginList');
@@ -830,14 +887,18 @@
           <td>${emp.name}</td>
           <td>${emp.type}</td>
           <td>${emp.phone}</td>
-          <td><button class="delete-btn" onclick="permanentlyDeleteEmployee('${key}')">Permanently Delete</button></td>
+          <td>
+            <button onclick="openDismissedEmployeeModal('${key}')">عرض المعلومات</button>
+            <button onclick="rehireEmployee('${key}')">إعادة توظيف</button>
+            <button class="delete-btn" onclick="permanentlyDeleteEmployee('${key}')">Permanently Delete</button>
+          </td>
         </tr>`;
       }
       dismissedHTML += "</tbody></table>";
       dismissedList.innerHTML = dismissedHTML;
     });
 
-    // Top Seller Designation Functions
+    // Top Seller Designation functions
     function createTopSellerDesignation() {
       const employee = document.getElementById('designateEmployeeSelect').value;
       const startDate = document.getElementById('topStartDate').value;
@@ -870,7 +931,7 @@
       }
     }
 
-    // Shared Functions for Admin Page
+    // Employee login management
     async function deleteEmployeeLogin(key) {
       if (!confirm('Are you sure you want to delete this employee login account?')) return;
       await database.ref(`employeeAccounts/${key}`).remove();
@@ -911,9 +972,8 @@
         document.getElementById('generalAnalytics').style.display = 'block';
       }
     }
-    // Helper: Check if a sale falls within a top seller designation period for an employee
     function getTopSellerRate(empName, saleDate) {
-      let rate = 0.5; // default for regular employee
+      let rate = 0.5;
       for(const key in topSellerDesignations) {
         const des = topSellerDesignations[key];
         if(des.employee === empName) {
@@ -1006,7 +1066,6 @@
         });
       });
     }
-    // Improved showEmployeeAnalytics with edit and delete options on sales
     function showEmployeeAnalytics(empName) {
       const month = document.getElementById('employeeMonth').value;
       let employeeProfit = 0;
@@ -1133,6 +1192,7 @@
           salesDetailsHTML += "</table>";
           const modalContent = document.getElementById('employeeModalContent');
           modalContent.innerHTML = `
+            <img class="employee-photo-modal" src="${employee.image ? employee.image : 'https://via.placeholder.com/600x300'}" alt="${employee.name}">
             <h3>Employee Details</h3>
             <p><strong>Name:</strong> ${employee.name}</p>
             <p><strong>Phone:</strong> ${employee.phone}</p>
@@ -1164,71 +1224,134 @@
       })
       .catch(error => { showAlert('error', `Error: ${error.message}`, 'accountAlert'); });
     }
-    function editReply(messageKey, currentReply) {
-      const reply = prompt("Edit your reply:", currentReply);
-      if(reply !== null) {
-        database.ref(`employeeMessages/${messageKey}`).update({ reply })
-        .then(() => { alert("Reply updated."); })
-        .catch(error => { alert("Error: " + error.message); });
-      }
-    }
-    function deleteMessage(messageKey) {
-      if(confirm("Are you sure you want to delete this message?")) {
-        database.ref(`employeeMessages/${messageKey}`).remove();
-      }
-    }
 
-    /* ------------------ Conversation Interface Functions for Admin ------------------ */
-    function loadAdminChatMessages() {
-      database.ref('conversation').orderByChild('date').on('value', snapshot => {
-        const messagesData = snapshot.val() || {};
-        let chatHTML = "";
-        for (const key in messagesData) {
-          const msg = messagesData[key];
-          if (msg.sender === "admin") {
-            // Admin message: green bubble with delete button
-            chatHTML += `<div class="chat-bubble admin">
-              <span>${msg.message}</span>
-              <div style="font-size:10px; text-align:right;">${new Date(msg.date).toLocaleTimeString()}</div>
-              <button class="delete-msg" onclick="deleteChatMessage('${key}')">Delete</button>
-            </div>`;
-          } else {
-            // Employee message: white bubble with employee's name and account picture, plus delete button.
-            // Use msg.employeeUsername to look up the employee details.
-            let empDetails = window.employeeMap[msg.employeeUsername] || {};
-            let empName = empDetails.name || msg.employeeUsername || "Employee";
-            let empPhoto = empDetails.photo || 'https://via.placeholder.com/30';
-            chatHTML += `<div class="chat-bubble employee">
-              <img class="emp-photo" src="${empPhoto}" alt="Emp Photo">
-              <span class="emp-name">${empName}</span>
-              <span>${msg.message}</span>
-              <div style="font-size:10px;">${new Date(msg.date).toLocaleTimeString()}</div>
-              <button class="delete-msg" onclick="deleteChatMessage('${key}')">Delete</button>
-            </div>`;
-          }
+    /* ------------------ Chat System Functions ------------------ */
+    window.chatData = {};
+    let currentChatEmployeeKey = null;
+    database.ref('chats').on('value', snapshot => {
+      window.chatData = snapshot.val() || {};
+      renderChatList();
+    });
+    function renderChatList() {
+      const chatListContainer = document.getElementById('chatList');
+      let html = "";
+      for (let key in window.employeesData) {
+        const emp = window.employeesData[key];
+        let lastMessage = "";
+        if (window.chatData && window.chatData[key] && window.chatData[key].lastMessage) {
+          lastMessage = window.chatData[key].lastMessage;
         }
-        document.getElementById('adminChatMessages').innerHTML = chatHTML;
-        document.querySelector('.chat-area').scrollTop = document.querySelector('.chat-area').scrollHeight;
+        let photo = emp.image ? emp.image : 'https://via.placeholder.com/50';
+        html += `<div class="chat-card" data-emp-key="${key}" onclick="openChatModal('${key}')">
+          <img class="chat-card-photo" src="${photo}" alt="${emp.name}">
+          <div class="chat-card-info">
+              <div class="chat-card-name">${emp.name}</div>
+              <div class="chat-card-last-message">${lastMessage}</div>
+          </div>
+       </div>`;
+      }
+      chatListContainer.innerHTML = html;
+    }
+    function openChatModal(empKey) {
+      currentChatEmployeeKey = empKey;
+      const emp = window.employeesData[empKey];
+      document.getElementById('chatModalHeaderName').textContent = emp.name;
+      document.getElementById('chatModalHeaderPhoto').src = emp.image ? emp.image : 'https://via.placeholder.com/40';
+      document.getElementById('chatModal').style.display = 'flex';
+      loadChatMessages(empKey);
+    }
+    function loadChatMessages(empKey) {
+      database.ref('chats/' + empKey + '/messages').on('value', snapshot => {
+        const messagesData = snapshot.val() || {};
+        let messagesHTML = "";
+        let messagesArray = [];
+        for (const msgKey in messagesData) {
+          messagesArray.push(messagesData[msgKey]);
+        }
+        messagesArray.sort((a, b) => a.timestamp - b.timestamp);
+        messagesArray.forEach(msg => {
+          if (msg.sender === 'admin') {
+            messagesHTML += `<div class="chat-bubble admin">${msg.text}</div>`;
+          } else {
+            messagesHTML += `<div class="chat-bubble employee">${msg.text}</div>`;
+          }
+        });
+        document.getElementById('chatModalBody').innerHTML = messagesHTML;
+        document.getElementById('chatModalBody').scrollTop = document.getElementById('chatModalBody').scrollHeight;
       });
     }
-    loadAdminChatMessages();
-    function sendAdminChatMessage() {
-      const input = document.getElementById('adminChatInput');
+    function sendChatMessage() {
+      const input = document.getElementById('chatInput');
       const text = input.value.trim();
       if (!text) return;
-      const messageData = {
-        sender: "admin",
-        message: text,
-        date: new Date().toISOString()
-      };
-      database.ref('conversation').push(messageData)
-      .then(() => { input.value = ""; });
+      const newMsg = { sender: 'admin', text: text, timestamp: Date.now() };
+      const chatRef = database.ref('chats/' + currentChatEmployeeKey + '/messages');
+      chatRef.push(newMsg).then(() => {
+          database.ref('chats/' + currentChatEmployeeKey).update({ lastMessage: text });
+          input.value = "";
+      }).catch(err => { console.error("Error sending message", err); });
     }
-    function deleteChatMessage(key) {
-      if(confirm("Are you sure you want to delete this message?")) {
-        database.ref('conversation/' + key).remove();
-      }
+    function closeChatModal() {
+      document.getElementById('chatModal').style.display = 'none';
+      database.ref('chats/' + currentChatEmployeeKey + '/messages').off();
     }
+
+    /* ------------------ Dismissed Employee Modal & Rehire ------------------ */
+    function openDismissedEmployeeModal(key) {
+      database.ref('dismissedEmployees/' + key).once('value').then(snapshot => {
+         const empData = snapshot.val();
+         if (!empData) return;
+         let content = `<h3>معلومات الموظف المفصول</h3>
+                        <p><strong>Name:</strong> ${empData.name}</p>
+                        <p><strong>Phone:</strong> ${empData.phone}</p>
+                        <p><strong>Type:</strong> ${empData.type}</p>`;
+         if (empData.sales) {
+             let totalProfit = 0;
+             let salesListHTML = `<h4>Sales Records:</h4><table>
+                <tr><th>Product</th><th>Original Price</th><th>Sale Price</th><th>Date</th></tr>`;
+             for (let saleKey in empData.sales) {
+                const sale = empData.sales[saleKey];
+                const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+                totalProfit += profit;
+                salesListHTML += `<tr>
+                    <td>${sale.productName}</td>
+                    <td>₪${sale.originalPrice}</td>
+                    <td>₪${sale.salePrice}</td>
+                    <td>${new Date(sale.date).toLocaleDateString()}</td>
+                </tr>`;
+             }
+             salesListHTML += `</table>`;
+             content += `<p><strong>Total Profit:</strong> ₪${totalProfit.toFixed(2)}</p>` + salesListHTML;
+         } else {
+             content += `<p>No sales records available.</p>`;
+         }
+         document.getElementById('dismissedEmployeeModalContent').innerHTML = content;
+         document.getElementById('dismissedEmployeeModal').style.display = 'flex';
+      });
+    }
+    function closeDismissedEmployeeModal(event) {
+      document.getElementById('dismissedEmployeeModal').style.display = 'none';
+    }
+    function rehireEmployee(key) {
+      if (!confirm('Are you sure you want to rehire this employee?')) return;
+      database.ref('dismissedEmployees/' + key).once('value').then(snapshot => {
+          const empData = snapshot.val();
+          if (empData) {
+             if (empData.sales) {
+                const salesData = empData.sales;
+                delete empData.sales;
+                for (let saleKey in salesData) {
+                   database.ref('sales').push(salesData[saleKey]);
+                }
+             }
+             database.ref('employees').push(empData).then(() => {
+                database.ref('dismissedEmployees/' + key).remove();
+                alert('Employee rehired successfully.');
+             });
+          }
+      });
+    }
+    /* ---------------------------------------------------------- */
   </script>
 </body>
 </html>
