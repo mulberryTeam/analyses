@@ -2,7 +2,8 @@
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- منع تكبير/تصغير الصفحة -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <title>Admin - Business Management System</title>
   <!-- Google Fonts for professional typography -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500,700" rel="stylesheet">
@@ -13,13 +14,14 @@
   <!-- Firestore-compat library for Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
   <style>
-    :root {
-      --primary-color: #2c3e50;
-      --secondary-color: #3498db;
-      --error-color: #e74c3c;
-      --success-color: #27ae60;
+    /* منع تكبير الصفحة على الأجهزة المحمولة */
+    html, body {
+      overflow-x: hidden;
+      -ms-touch-action: manipulation;
+      touch-action: manipulation;
     }
-    /* General Modal Styles (for all modals including dismissed employee modal) */
+    
+    /* إعدادات النافذة المنبثقة العامة */
     .modal {
       position: fixed;
       top: 0;
@@ -41,6 +43,12 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     
+    :root {
+      --primary-color: #2c3e50;
+      --secondary-color: #3498db;
+      --error-color: #e74c3c;
+      --success-color: #27ae60;
+    }
     /* Global Styles */
     body { 
       font-family: 'Roboto', sans-serif;
@@ -132,10 +140,23 @@
       margin: 8px 5px;
     }
     button:hover { background: #2980b9; transform: scale(1.05); }
-    table { width: 100%; border-collapse: collapse; margin-top: 25px; }
-    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 25px; 
+    }
+    th, td { 
+      padding: 15px; 
+      text-align: left; 
+      border-bottom: 1px solid #eee; 
+    }
     th { background: var(--primary-color); color: #fff; }
     table tbody tr:nth-child(even) { background: #f8f8f8; }
+    /* حاوية لجعل الجداول تمريرية على الشاشات الصغيرة */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
     .delete-btn {
       background: var(--error-color);
       border: none;
@@ -199,7 +220,7 @@
     .employee-type { font-size: 14px; color: var(--secondary-color); margin-bottom: 10px; }
     .employee-actions button { margin: 5px; font-size: 12px; padding: 8px 12px; }
     
-    /* Analytics and other sections remain unchanged */
+    /* Analytics & Tables remain unchanged */
     .analytics-options { margin-bottom: 20px; }
     .analytics-options button { margin-right: 10px; }
     .analytics-card {
@@ -223,7 +244,7 @@
     .tab-content { animation: fadeIn 0.5s ease-in-out; }
     h2 { text-shadow: 1px 1px 3px rgba(0,0,0,0.1); }
 
-    /* Chat Section (remains as before) */
+    /* Chat Section */
     .chat-card {
       display: flex;
       align-items: center;
@@ -303,6 +324,7 @@
       border-radius: 20px;
     }
     .chat-bubble {
+      position: relative;
       max-width: 70%;
       padding: 10px;
       border-radius: 15px;
@@ -319,6 +341,21 @@
       color: #000;
       float: left;
       border: 1px solid #ddd;
+    }
+    .delete-message {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(255,255,255,0.7);
+      border: none;
+      border-radius: 50%;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 2px 4px;
+      display: none;
+    }
+    .chat-bubble:hover .delete-message {
+      display: block;
     }
   </style>
 </head>
@@ -388,19 +425,21 @@
         <div id="saleAlert" class="alert"></div>
       </div>
       <h2>Sales Records</h2>
-      <table id="salesTable">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Original Price (₪)</th>
-            <th>Sale Price (₪)</th>
-            <th>Seller</th>
-            <th>Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="salesList"></tbody>
-      </table>
+      <div class="table-container">
+        <table id="salesTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Original Price (₪)</th>
+              <th>Sale Price (₪)</th>
+              <th>Seller</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="salesList"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Analytics Tab -->
@@ -411,20 +450,60 @@
         <button onclick="showAnalyticsOption('general')">General Analytics</button>
       </div>
       <div id="analyticsContent">
+        <!-- Store Analytics with custom period option -->
         <div id="storeAnalytics" class="analytics-card" style="display: none;">
           <h2>Store Analytics</h2>
-          <label for="storeMonth">Select Month:</label>
-          <input type="month" id="storeMonth">
-          <button onclick="calculateStoreAnalytics()">Show Analytics</button>
+          <div>
+            <label>
+              <input type="radio" name="storeAnalysisType" value="month" checked onclick="toggleStoreAnalysisInput('month')">
+              By Month
+            </label>
+            <label>
+              <input type="radio" name="storeAnalysisType" value="custom" onclick="toggleStoreAnalysisInput('custom')">
+              Custom Period
+            </label>
+          </div>
+          <div id="storeMonthInput">
+            <label for="storeMonth">Select Month:</label>
+            <input type="month" id="storeMonth">
+          </div>
+          <div id="storeCustomInputs" style="display:none;">
+            <label for="storeStartDate">Start Date:</label>
+            <input type="date" id="storeStartDate">
+            <label for="storeEndDate">End Date:</label>
+            <input type="date" id="storeEndDate">
+          </div>
+          <button onclick="calculateStoreAnalyticsUpdated()">Show Analytics</button>
           <div id="storeAnalyticsResult"></div>
         </div>
+        <!-- Employee Analytics with custom period option -->
         <div id="employeeAnalytics" class="analytics-card" style="display: none;">
           <h2>Employee Analytics</h2>
-          <label for="employeeMonth">Select Month:</label>
-          <input type="month" id="employeeMonth" onchange="calculateEmployeeListAnalytics()">
+          <div>
+            <label>
+              <input type="radio" name="employeeAnalysisType" value="month" checked onclick="toggleEmployeeAnalysisInput('month')">
+              By Month
+            </label>
+            <label>
+              <input type="radio" name="employeeAnalysisType" value="custom" onclick="toggleEmployeeAnalysisInput('custom')">
+              Custom Period
+            </label>
+          </div>
+          <div id="employeeMonthInput">
+            <label for="employeeMonth">Select Month:</label>
+            <input type="month" id="employeeMonth" onchange="calculateEmployeeListAnalytics()">
+          </div>
+          <div id="employeeCustomInputs" style="display:none;">
+            <label for="employeeStartDate">Start Date:</label>
+            <input type="date" id="employeeStartDate">
+            <label for="employeeEndDate">End Date:</label>
+            <input type="date" id="employeeEndDate">
+          </div>
+          <button onclick="calculateEmployeeAnalyticsUpdated()">Show Analytics</button>
           <div id="employeeListAnalytics"></div>
           <div id="employeeDetailAnalytics"></div>
         </div>
+        <!-- General Analytics (existing custom period feature) -->
         <div id="generalAnalytics" class="analytics-card" style="display: none;">
           <h2>General Analytics</h2>
           <div>
@@ -500,17 +579,19 @@
     <!-- Employee Logins Tab -->
     <div id="employeeLogins" class="tab-content" style="display: none;">
       <h2>Employee Login Management</h2>
-      <table id="loginTable">
-        <thead>
-          <tr>
-            <th>Employee Name</th>
-            <th>Username</th>
-            <th>Password</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="loginList"></tbody>
-      </table>
+      <div class="table-container">
+        <table id="loginTable">
+          <thead>
+            <tr>
+              <th>Employee Name</th>
+              <th>Username</th>
+              <th>Password</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="loginList"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Dismissed Employees Tab -->
@@ -534,7 +615,7 @@
     </div>
   </div>
 
-  <!-- Chat Modal (نافذة المحادثة المنبثقة) -->
+  <!-- Chat Modal -->
   <div id="chatModal" class="modal" onclick="closeChatModal()">
     <div class="chat-modal" onclick="event.stopPropagation()">
       <div class="chat-modal-header">
@@ -552,7 +633,7 @@
     </div>
   </div>
 
-  <!-- Dismissed Employee Modal (لعرض معلومات الموظف المفصول ومبيعاته) -->
+  <!-- Dismissed Employee Modal -->
   <div id="dismissedEmployeeModal" class="modal" onclick="closeDismissedEmployeeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
       <span class="modal-close" onclick="closeDismissedEmployeeModal(event)">&times;</span>
@@ -660,7 +741,7 @@
     database.ref('dismissedEmployees').on('value', snapshot => {
       const dismissedData = snapshot.val() || {};
       const dismissedList = document.getElementById('dismissedList');
-      let dismissedHTML = "<table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
+      let dismissedHTML = "<div class='table-container'><table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
       for (const key in dismissedData) {
         const emp = dismissedData[key];
         dismissedHTML += `<tr>
@@ -674,7 +755,7 @@
           </td>
         </tr>`;
       }
-      dismissedHTML += "</tbody></table>";
+      dismissedHTML += "</tbody></table></div>";
       dismissedList.innerHTML = dismissedHTML;
     });
 
@@ -880,7 +961,7 @@
     database.ref('dismissedEmployees').on('value', snapshot => {
       const dismissedData = snapshot.val() || {};
       const dismissedList = document.getElementById('dismissedList');
-      let dismissedHTML = "<table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
+      let dismissedHTML = "<div class='table-container'><table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Actions</th></tr></thead><tbody>";
       for (const key in dismissedData) {
         const emp = dismissedData[key];
         dismissedHTML += `<tr>
@@ -894,7 +975,7 @@
           </td>
         </tr>`;
       }
-      dismissedHTML += "</tbody></table>";
+      dismissedHTML += "</tbody></table></div>";
       dismissedList.innerHTML = dismissedHTML;
     });
 
@@ -1027,6 +1108,70 @@
         `;
       });
     }
+    function calculateStoreAnalyticsCustom(startDate, endDate) {
+      let storeProfit = 0;
+      let totalProfit = 0;
+      let storeSalesCount = 0;
+      let totalSalesCount = 0;
+      database.ref('sales').once('value').then(snapshot => {
+        const salesData = snapshot.val() || {};
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        for (const key in salesData) {
+          const sale = salesData[key];
+          const saleDt = new Date(sale.date);
+          if (saleDt >= start && saleDt <= end) {
+            const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+            totalProfit += profit;
+            totalSalesCount++;
+            if (sale.seller === "Store") {
+              storeProfit += profit;
+              storeSalesCount++;
+            } else {
+              let empType = null;
+              database.ref('employees').orderByChild('name').equalTo(sale.seller).once('value').then(empSnap => {
+                empSnap.forEach(child => { empType = child.val().type; });
+                if (empType === "regular") {
+                  storeProfit += profit * 0.5;
+                } else if (empType === "distinguished") {
+                  storeProfit += profit * 0.3;
+                }
+              });
+            }
+          }
+        }
+        const storeProfitPercentage = totalProfit ? ((storeProfit / totalProfit) * 100).toFixed(2) : 0;
+        const storeSalesPercentage = totalSalesCount ? ((storeSalesCount / totalSalesCount) * 100).toFixed(2) : 0;
+        document.getElementById('storeAnalyticsResult').innerHTML = `
+          <p>Total Store Profit (Custom Period): ₪${storeProfit.toFixed(2)}</p>
+          <p>This is ${storeProfitPercentage}% of total profit (₪${totalProfit.toFixed(2)})</p>
+          <p>Store Sales Count: ${storeSalesCount} (${storeSalesPercentage}% of ${totalSalesCount} sales)</p>
+        `;
+      });
+    }
+    function calculateStoreAnalyticsUpdated() {
+      const analysisType = document.querySelector('input[name="storeAnalysisType"]:checked').value;
+      if (analysisType === 'month') {
+        calculateStoreAnalytics();
+      } else {
+        const startDate = document.getElementById('storeStartDate').value;
+        const endDate = document.getElementById('storeEndDate').value;
+        if(!startDate || !endDate) {
+          alert("Please select start and end dates for custom period.");
+          return;
+        }
+        calculateStoreAnalyticsCustom(startDate, endDate);
+      }
+    }
+    function toggleStoreAnalysisInput(mode) {
+      if (mode === 'month') {
+        document.getElementById('storeMonthInput').style.display = 'block';
+        document.getElementById('storeCustomInputs').style.display = 'none';
+      } else {
+        document.getElementById('storeMonthInput').style.display = 'none';
+        document.getElementById('storeCustomInputs').style.display = 'block';
+      }
+    }
     function calculateEmployeeListAnalytics() {
       const month = document.getElementById('employeeMonth').value;
       let content = '<div class="analytics-employee-cards">';
@@ -1065,6 +1210,70 @@
           document.getElementById('employeeDetailAnalytics').innerHTML = "";
         });
       });
+    }
+    function calculateEmployeeAnalyticsCustom(startDate, endDate) {
+      let content = '<div class="analytics-employee-cards">';
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      database.ref('employees').once('value').then(snapshot => {
+        const employeesData = snapshot.val() || {};
+        database.ref('sales').once('value').then(snapSales => {
+          const salesData = snapSales.val() || {};
+          for (const key in employeesData) {
+            const emp = employeesData[key];
+            let salesCount = 0;
+            let totalProfit = 0;
+            for (const saleKey in salesData) {
+              const sale = salesData[saleKey];
+              const saleDt = new Date(sale.date);
+              if (saleDt >= start && saleDt <= end && sale.seller === emp.name) {
+                const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+                salesCount++;
+                if (emp.type === "regular") {
+                  totalProfit += profit * getTopSellerRate(emp.name, sale.date);
+                } else if (emp.type === "distinguished") {
+                  totalProfit += profit * 0.7;
+                }
+              }
+            }
+            content += `
+              <div class="analytics-employee-card" onclick="showEmployeeAnalytics('${emp.name}')">
+                <h4>${emp.name}</h4>
+                <p>Type: ${emp.type.charAt(0).toUpperCase() + emp.type.slice(1)}</p>
+                <p>Sales: ${salesCount}</p>
+                <p>Profit: ₪${totalProfit.toFixed(2)}</p>
+                <button onclick="event.stopPropagation(); showEmployeeAnalytics('${emp.name}')">View Details</button>
+              </div>
+            `;
+          }
+          content += '</div>';
+          document.getElementById('employeeListAnalytics').innerHTML = content;
+          document.getElementById('employeeDetailAnalytics').innerHTML = "";
+        });
+      });
+    }
+    function calculateEmployeeAnalyticsUpdated() {
+      const analysisType = document.querySelector('input[name="employeeAnalysisType"]:checked').value;
+      if (analysisType === 'month') {
+        calculateEmployeeListAnalytics();
+      } else {
+        const startDate = document.getElementById('employeeStartDate').value;
+        const endDate = document.getElementById('employeeEndDate').value;
+        if(!startDate || !endDate) {
+          alert("Please select start and end dates for custom period.");
+          return;
+        }
+        calculateEmployeeAnalyticsCustom(startDate, endDate);
+      }
+    }
+    function toggleEmployeeAnalysisInput(mode) {
+      if (mode === 'month') {
+        document.getElementById('employeeMonthInput').style.display = 'block';
+        document.getElementById('employeeCustomInputs').style.display = 'none';
+      } else {
+        document.getElementById('employeeMonthInput').style.display = 'none';
+        document.getElementById('employeeCustomInputs').style.display = 'block';
+      }
     }
     function showEmployeeAnalytics(empName) {
       const month = document.getElementById('employeeMonth').value;
@@ -1261,24 +1470,30 @@
       loadChatMessages(empKey);
     }
     function loadChatMessages(empKey) {
-      database.ref('chats/' + empKey + '/messages').on('value', snapshot => {
+      database.ref('chats/' + empKey + '/messages').once('value').then(snapshot => {
         const messagesData = snapshot.val() || {};
-        let messagesHTML = "";
         let messagesArray = [];
         for (const msgKey in messagesData) {
-          messagesArray.push(messagesData[msgKey]);
+          messagesArray.push({ id: msgKey, ...messagesData[msgKey] });
         }
         messagesArray.sort((a, b) => a.timestamp - b.timestamp);
+        let messagesHTML = "";
         messagesArray.forEach(msg => {
+          let deleteBtn = `<button class="delete-message" onclick="deleteChatMessage('${msg.id}', '${empKey}')">×</button>`;
           if (msg.sender === 'admin') {
-            messagesHTML += `<div class="chat-bubble admin">${msg.text}</div>`;
+            messagesHTML += `<div class="chat-bubble admin" data-msgid="${msg.id}">${msg.text}${deleteBtn}</div>`;
           } else {
-            messagesHTML += `<div class="chat-bubble employee">${msg.text}</div>`;
+            messagesHTML += `<div class="chat-bubble employee" data-msgid="${msg.id}">${msg.text}${deleteBtn}</div>`;
           }
         });
         document.getElementById('chatModalBody').innerHTML = messagesHTML;
         document.getElementById('chatModalBody').scrollTop = document.getElementById('chatModalBody').scrollHeight;
       });
+    }
+    function deleteChatMessage(messageId, empKey) {
+      if(confirm("Are you sure you want to delete this message?")) {
+        database.ref('chats/' + empKey + '/messages/' + messageId).remove();
+      }
     }
     function sendChatMessage() {
       const input = document.getElementById('chatInput');
@@ -1289,11 +1504,11 @@
       chatRef.push(newMsg).then(() => {
           database.ref('chats/' + currentChatEmployeeKey).update({ lastMessage: text });
           input.value = "";
+          loadChatMessages(currentChatEmployeeKey);
       }).catch(err => { console.error("Error sending message", err); });
     }
     function closeChatModal() {
       document.getElementById('chatModal').style.display = 'none';
-      database.ref('chats/' + currentChatEmployeeKey + '/messages').off();
     }
 
     /* ------------------ Dismissed Employee Modal & Rehire ------------------ */
