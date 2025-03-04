@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>تسجيل الدخول - نظام حسابات Mulberry Company في فلسطين</title>
   <!-- تحميل خط عربي مميز -->
@@ -136,7 +136,7 @@
   </div>
 
   <script>
-    // تعريف الترجمات للغتين العربية والإنجليزية
+    // ترجمة النصوص بين العربية والإنجليزية
     const translations = {
       ar: {
         title: "تسجيل الدخول - نظام حسابات Mulberry Company في فلسطين",
@@ -176,13 +176,12 @@
       document.getElementById('translateBtn').textContent = translations[currentLang].translateButton;
     }
 
-    // زر الترجمة يقوم بتبديل اللغة بين العربية والإنجليزية
     document.getElementById('translateBtn').addEventListener('click', function() {
       currentLang = (currentLang === "ar") ? "en" : "ar";
       updateLanguage();
     });
 
-    // إعدادات Firebase
+    // إعدادات Firebase (إذا كنت تحتاجها في مشروعك الفعلي)
     const firebaseConfig = {
       apiKey: "AIzaSyAi3_y7ugKB0cgzMV1-IVvbE2BwG_9RKSs",
       authDomain: "team-analysis-3c196.firebaseapp.com",
@@ -194,25 +193,35 @@
       measurementId: "G-853WkH2JK7"
     };
 
-    // تهيئة Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // التحقق من حالة المستخدم المحفوظة في Local Storage
+    (function checkLoginStatus() {
+      const userRole = localStorage.getItem('userRole');
+      if (userRole === 'admin') {
+        window.location.href = "admin.html";
+      } else if (userRole === 'employee') {
+        window.location.href = "employee.html";
+      }
+    })();
+
+    // عند ضغط زر تسجيل الدخول
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
-      // تحويل اسم المستخدم إلى حروف صغيرة
       const username = document.getElementById('username').value.trim().toLowerCase();
       const password = document.getElementById('password').value.trim();
       const loginAlert = document.getElementById('loginAlert');
 
-      // التحقق من بيانات المدير أولاً
-      if(username === "a7mad.mutaz" && password === "123&ahmad") {
+      // تحقق من بيانات المدير
+      // يمكنك تعديل اسم المستخدم وكلمة المرور حسب حاجتك
+      if (username === "a7mad.mutaz" && password === "123&ahmad") {
         localStorage.setItem('userRole', 'admin');
         window.location.href = "admin.html";
         return;
       }
 
-      // التحقق من حسابات الموظفين
+      // التحقق من حسابات الموظفين في Firebase
       database.ref('employeeAccounts').orderByChild('username').equalTo(username).once('value')
       .then(snapshot => {
         if(snapshot.exists()) {
@@ -220,7 +229,7 @@
           let employeeData;
           snapshot.forEach(childSnapshot => {
             employeeData = childSnapshot.val();
-            if(employeeData.password === password) {
+            if (employeeData.password === password) {
               valid = true;
             }
           });
@@ -241,8 +250,7 @@
       });
     });
 
-    // تحديث الصفحة للغة الافتراضية عند التحميل
-    updateLanguage();
+    updateLanguage(); // لضبط اللغة عند فتح الصفحة
 
     // الكشف عن متصفح إنستاجرام داخل التطبيق وتطبيق الخلفية الثابتة
     if (navigator.userAgent.match(/Instagram/)) {
