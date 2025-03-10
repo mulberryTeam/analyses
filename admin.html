@@ -121,7 +121,9 @@
     input[type="month"],
     input[type="date"],
     input[type="password"],
-    select {
+    textarea,
+    select,
+    input[type="file"] {
       padding: 12px;
       width: 300px;
       margin: 8px 0;
@@ -129,7 +131,8 @@
       border-radius: 6px;
       transition: border-color 0.3s;
     }
-    input:focus, select:focus { border-color: var(--secondary-color); outline: none; }
+    textarea { resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color: var(--secondary-color); outline: none; }
     button { 
       padding: 12px 25px;
       background: var(--secondary-color);
@@ -149,7 +152,7 @@
     th, td { 
       padding: 15px; 
       text-align: left; 
-      border-bottom: 1px solid #eee; 
+      border-bottom: 1px solid #eee;
     }
     th { background: var(--primary-color); color: #fff; }
     table tbody tr:nth-child(even) { background: #f8f8f8; }
@@ -297,6 +300,27 @@
     .prize-card button:hover {
       background: #2980b9;
     }
+    /* تنسيقات بطاقات المنتجات */
+    .product-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .product-card {
+      border: 1px solid #eee;
+      padding: 10px;
+      border-radius: 8px;
+      width: 200px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .product-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
@@ -319,6 +343,8 @@
       <button class="tab" onclick="showTab('employeeLogins')">Employee Logins</button>
       <button class="tab" onclick="showTab('dismissedEmployees')">Dismissed Employees</button>
       <button class="tab" onclick="showTab('prizes')">الجوائز</button>
+      <!-- تم تغيير نص الزر من "بكجات الهدايا" إلى "ادارة الانتاج" -->
+      <button class="tab" onclick="showTab('categoriesProducts')">ادارة الانتاج</button>
     </div>
 
     <!-- Employees Tab -->
@@ -434,7 +460,7 @@
             <label for="employeeMonth">Select Month:</label>
             <input type="month" id="employeeMonth" onchange="calculateEmployeeListAnalytics()">
           </div>
-          <div id="employeeCustomInputs" style="display:none;">
+          <div id="employeeCustomInputs" style="display: none;">
             <label for="employeeStartDate">Start Date:</label>
             <input type="date" id="employeeStartDate">
             <label for="employeeEndDate">End Date:</label>
@@ -555,6 +581,43 @@
         <div id="deliveredContainer" class="prize-cards" style="display: none;"></div>
       </div>
     </div>
+
+    <!-- Categories & Products Tab (ادارة الانتاج) -->
+    <div id="categoriesProducts" class="tab-content" style="display: none;">
+      <!-- Categories Management -->
+      <div class="form-section">
+        <h2>إضافة/تعديل فئة</h2>
+        <form id="categoryForm" onsubmit="handleCategorySubmit(event)">
+          <input type="hidden" id="catKey">
+          <input type="text" id="catName" placeholder="اسم الفئة" required>
+          <button type="submit" id="categorySubmitBtn">إضافة الفئة</button>
+          <button type="button" onclick="cancelCategoryEdit()" style="display: none;" id="cancelCategoryBtn">إلغاء</button>
+        </form>
+        <div id="categoryAlert" class="alert"></div>
+      </div>
+      <h2>قائمة الفئات</h2>
+      <div id="categoryList"></div>
+      <!-- Products Management -->
+      <div class="form-section">
+        <h2>إضافة/تعديل منتج</h2>
+        <form id="productForm" onsubmit="handleProductSubmit(event)">
+          <input type="hidden" id="prodKey">
+          <input type="text" id="productName" placeholder="اسم المنتج" required>
+          <input type="number" id="productPrice" placeholder="السعر" min="0" step="0.01" required>
+          <!-- تغيير حقل صورة المنتج ليكون من نوع file -->
+          <input type="file" id="productImage" accept="image/*" required>
+          <textarea id="productDescription" placeholder="وصف المنتج" required></textarea>
+          <select id="productCategorySelect" required>
+            <option value="" disabled selected>اختر الفئة</option>
+          </select>
+          <button type="submit" id="productSubmitBtn">إضافة المنتج</button>
+          <button type="button" onclick="cancelProductEdit()" style="display: none;" id="cancelProductBtn">إلغاء</button>
+        </form>
+        <div id="productAlert" class="alert"></div>
+      </div>
+      <h2>قائمة المنتجات</h2>
+      <div id="productCards" class="product-cards"></div>
+    </div>
   </div>
 
   <!-- Employee Modal for Detailed Data -->
@@ -570,6 +633,14 @@
     <div class="modal-content" onclick="event.stopPropagation()">
       <span class="modal-close" onclick="closeDismissedEmployeeModal(event)">&times;</span>
       <div id="dismissedEmployeeModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Product Modal for Detailed Data -->
+  <div id="productModal" class="modal" onclick="closeProductModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <span class="modal-close" onclick="closeProductModal(event)">&times;</span>
+      <div id="productModalContent"></div>
     </div>
   </div>
 
@@ -1473,6 +1544,200 @@
       if(confirm("هل أنت متأكد من حذف هذه الجائزة؟")) {
         database.ref('prizes/' + key).remove();
       }
+    }
+    /* ---------------------------------------------------------- */
+
+    /* ------------------ Categories & Products Section (ادارة الانتاج) ------------------ */
+    // المتغيرات للتحرير
+    let editingCategoryKey = null;
+    let editingProductKey = null;
+    // متغير لتخزين رابط الصورة القديمة عند تعديل المنتج
+    let editingProductOldImage = null;
+
+    // التعامل مع إضافة/تعديل الفئة
+    function handleCategorySubmit(event) {
+      event.preventDefault();
+      const catName = document.getElementById('catName').value.trim();
+      if (!catName) {
+        showAlert('error', 'يرجى إدخال اسم الفئة!', 'categoryAlert');
+        return;
+      }
+      const catData = { name: catName };
+      if (editingCategoryKey) {
+        database.ref(`categories/${editingCategoryKey}`).update(catData)
+          .then(() => { 
+            showAlert('success', 'تم تحديث الفئة بنجاح!', 'categoryAlert'); 
+            cancelCategoryEdit(); 
+          })
+          .catch(error => { showAlert('error', `خطأ: ${error.message}`, 'categoryAlert'); });
+      } else {
+        database.ref('categories').push(catData)
+          .then(() => { 
+            showAlert('success', 'تم إضافة الفئة بنجاح!', 'categoryAlert'); 
+            document.getElementById('catName').value = ''; 
+          })
+          .catch(error => { showAlert('error', `خطأ: ${error.message}`, 'categoryAlert'); });
+      }
+    }
+    function editCategory(key) {
+      database.ref(`categories/${key}`).once('value').then(snapshot => {
+        const cat = snapshot.val();
+        document.getElementById('catName').value = cat.name;
+        editingCategoryKey = key;
+        document.getElementById('categorySubmitBtn').textContent = 'تحديث الفئة';
+        document.getElementById('cancelCategoryBtn').style.display = 'inline-block';
+      });
+    }
+    function cancelCategoryEdit() {
+      editingCategoryKey = null;
+      document.getElementById('categoryForm').reset();
+      document.getElementById('categorySubmitBtn').textContent = 'إضافة الفئة';
+      document.getElementById('cancelCategoryBtn').style.display = 'none';
+    }
+    function deleteCategory(key) {
+      if (!confirm('هل أنت متأكد من حذف هذه الفئة؟')) return;
+      database.ref(`categories/${key}`).remove();
+    }
+    // تحديث قائمة الفئات وتعبئة قائمة اختيار الفئة في إضافة المنتج
+    database.ref('categories').on('value', snapshot => {
+      const categoriesData = snapshot.val() || {};
+      const categoryListDiv = document.getElementById('categoryList');
+      let listHTML = '<ul>';
+      const productCategorySelect = document.getElementById('productCategorySelect');
+      productCategorySelect.innerHTML = '<option value="" disabled selected>اختر الفئة</option>';
+      for (const key in categoriesData) {
+        const cat = categoriesData[key];
+        listHTML += `<li>${cat.name} <button onclick="editCategory('${key}')">تعديل</button> <button onclick="deleteCategory('${key}')">حذف</button></li>`;
+        let option = document.createElement('option');
+        option.value = cat.name;
+        option.textContent = cat.name;
+        productCategorySelect.appendChild(option);
+      }
+      listHTML += '</ul>';
+      categoryListDiv.innerHTML = listHTML;
+    });
+
+    // التعامل مع إضافة/تعديل المنتج
+    async function handleProductSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById('productName').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const fileInput = document.getElementById('productImage');
+      const description = document.getElementById('productDescription').value.trim();
+      const category = document.getElementById('productCategorySelect').value;
+      // عند الإضافة يكون اختيار الصورة إلزامي، أما عند التعديل فيمكن الاحتفاظ بالصورة القديمة إذا لم يتم اختيار صورة جديدة
+      if (!name || isNaN(price) || (!editingProductKey && fileInput.files.length === 0) || !description || !category) {
+        showAlert('error', 'يرجى ملء جميع الحقول بشكل صحيح!', 'productAlert');
+        return;
+      }
+      
+      let imageUrl = editingProductOldImage; // في حالة التعديل وعدم اختيار صورة جديدة
+      if(fileInput.files.length > 0) {
+        try {
+          const file = fileInput.files[0];
+          const base64Image = await convertToBase64(file);
+          const imgbbUrl = `https://api.imgbb.com/1/upload?key=d76282687ea27ed446e7883c853038c8`;
+          const formData = new FormData();
+          // إزالة البادئة ("data:image/xxx;base64,") قبل الإرسال
+          const base64String = base64Image.split(',')[1];
+          formData.append("image", base64String);
+          const response = await fetch(imgbbUrl, { method: "POST", body: formData });
+          const data = await response.json();
+          if (!data.success) {
+            throw new Error("فشل رفع الصورة إلى imgbb");
+          }
+          imageUrl = data.data.url;
+        } catch (error) {
+          showAlert('error', `خطأ في رفع الصورة: ${error.message}`, 'productAlert');
+          return;
+        }
+      }
+      
+      const productData = { name, price: price.toFixed(2), image: imageUrl, description, category };
+      try {
+        if (editingProductKey) {
+          await database.ref(`products/${editingProductKey}`).update(productData);
+          showAlert('success', 'تم تحديث المنتج بنجاح!', 'productAlert');
+          cancelProductEdit();
+        } else {
+          await database.ref('products').push(productData);
+          showAlert('success', 'تم إضافة المنتج بنجاح!', 'productAlert');
+          document.getElementById('productForm').reset();
+        }
+      } catch (error) {
+        showAlert('error', `خطأ: ${error.message}`, 'productAlert');
+      }
+    }
+    // دالة لتحويل الملف إلى Base64
+    function convertToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+    function editProduct(key) {
+      database.ref(`products/${key}`).once('value').then(snapshot => {
+        const prod = snapshot.val();
+        document.getElementById('productName').value = prod.name;
+        document.getElementById('productPrice').value = prod.price;
+        // لا يمكن ملء حقل file input بشكل مباشر لأسباب أمنية، لذا يتم تخزين رابط الصورة القديمة في متغير
+        editingProductOldImage = prod.image;
+        document.getElementById('productDescription').value = prod.description;
+        document.getElementById('productCategorySelect').value = prod.category;
+        editingProductKey = key;
+        document.getElementById('productSubmitBtn').textContent = 'تحديث المنتج';
+        document.getElementById('cancelProductBtn').style.display = 'inline-block';
+      });
+    }
+    function cancelProductEdit() {
+      editingProductKey = null;
+      editingProductOldImage = null;
+      document.getElementById('productForm').reset();
+      document.getElementById('productSubmitBtn').textContent = 'إضافة المنتج';
+      document.getElementById('cancelProductBtn').style.display = 'none';
+    }
+    function deleteProduct(key) {
+      if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+      database.ref(`products/${key}`).remove();
+    }
+    // تحديث قائمة المنتجات وعرضها كبطاقات (يقرأ من عقدة "products")
+    database.ref('products').on('value', snapshot => {
+      const productsData = snapshot.val() || {};
+      const productCardsDiv = document.getElementById('productCards');
+      let cardsHTML = "";
+      for (const key in productsData) {
+        const prod = productsData[key];
+        cardsHTML += `
+          <div class="product-card" onclick="showProductModal('${key}')">
+            <img src="${prod.image}" alt="${prod.name}">
+            <h4>${prod.name}</h4>
+            <p>₪${prod.price}</p>
+            <button class="edit-btn" onclick="event.stopPropagation(); editProduct('${key}')">تعديل</button>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct('${key}')">حذف</button>
+          </div>
+        `;
+      }
+      productCardsDiv.innerHTML = cardsHTML;
+    });
+    function showProductModal(key) {
+      database.ref(`products/${key}`).once('value').then(snapshot => {
+        const prod = snapshot.val();
+        if (prod) {
+          const content = `
+            <img src="${prod.image}" alt="${prod.name}" style="width:100%; height:auto; border-radius:4px;">
+            <h2>${prod.name}</h2>
+            <p>${prod.description}</p>
+            <p>السعر: ₪${prod.price}</p>
+          `;
+          document.getElementById('productModalContent').innerHTML = content;
+          document.getElementById('productModal').style.display = 'flex';
+        }
+      });
+    }
+    function closeProductModal(event) {
+      document.getElementById('productModal').style.display = 'none';
     }
     /* ---------------------------------------------------------- */
   </script>
