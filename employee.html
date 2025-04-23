@@ -278,6 +278,8 @@
         <button onclick="loadSalesData()">تطبيق التصفية</button>
       </div>
       <h2 id="salesHeader">بيانات المبيعات والأرباح الخاصة بك</h2>
+<h3 id="employeeTargetDisplay" style="color:#27ae60; margin-bottom: 15px;"></h3>
+
       <div id="salesData" class="sales-card">
         <!-- يتم تحميل جدول المبيعات هنا -->
       </div>
@@ -375,9 +377,18 @@
     const employeeName = localStorage.getItem('employeeName');
     if (!employeeName) {
       alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
-      window.location.href = "login.html";
+      window.location.href = "index.html";
     }
     document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
+database.ref('employees').orderByChild('name').equalTo(employeeName).once('value')
+  .then(snapshot => {
+    snapshot.forEach(child => {
+      const data = child.val();
+      const points = data.target || 0;
+      document.getElementById('employeeTargetDisplay').textContent = `عدد النقاط الحالية: ${points} نقطة`;
+    });
+  });
+
 
     // تحديث النصوص الثابتة للواجهة بناءً على اللغة الحالية
     function updateStaticTexts() {
@@ -442,7 +453,21 @@
             <th>${translations[currentLanguage].tableHeaders.date}</th>
             </tr>`;
           const filterType = document.querySelector('input[name="filterType"]:checked').value;
-          let filterFn = sale => true;
+let filterFn = sale => true;
+
+// ✅ فلترة افتراضية: عرض الشهر الحالي إذا ما تم اختيار أي تواريخ
+if (!document.getElementById('filterDayInput').value &&
+    !document.getElementById('filterMonthInput').value &&
+    !document.getElementById('filterStartDate').value &&
+    !document.getElementById('filterEndDate').value) {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = (today.getMonth() + 1).toString().padStart(2, '0');
+  const currentMonth = `${year}-${month}`;
+  filterFn = sale => sale.date.startsWith(currentMonth);
+}
+
+
           if (filterType === "day") {
             const day = document.getElementById('filterDayInput').value;
             if (day) { filterFn = sale => sale.date.slice(0,10) === day; }
