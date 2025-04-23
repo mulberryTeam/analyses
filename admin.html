@@ -369,6 +369,18 @@
       <div id="employeeCards" class="employee-cards"></div>
     </div>
 
+<div class="form-section">
+  <h2>تعديل نقاط الموظف</h2>
+  <label for="targetEmployeeSelect">اختر الموظف:</label>
+  <select id="targetEmployeeSelect">
+    <option value="" disabled selected>اختر الموظف</option>
+  </select>
+  <input type="number" id="targetPointsInput" placeholder="عدد النقاط" min="0">
+  <button onclick="updateEmployeeTarget()">تحديث النقاط</button>
+  <div id="targetAlert" class="alert"></div>
+</div>
+
+
     <!-- Sales Tab -->
     <div id="sales" class="tab-content" style="display: none;">
       <div class="form-section">
@@ -699,6 +711,8 @@
       // Update select elements
       const employeeSelect = document.getElementById('employeeSelect');
       employeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>';
+document.getElementById('targetEmployeeSelect').innerHTML = '<option value="" disabled selected>اختر الموظف</option>';
+
       const accountEmployeeSelect = document.getElementById('accountEmployeeSelect');
       if(accountEmployeeSelect) { accountEmployeeSelect.innerHTML = '<option value="" disabled selected>Select Employee</option>'; }
       const designateEmployeeSelect = document.getElementById('designateEmployeeSelect');
@@ -717,6 +731,11 @@
         option3.value = emp.name;
         option3.textContent = emp.name;
         if(designateEmployeeSelect) { designateEmployeeSelect.appendChild(option3); }
+let optionTarget = document.createElement('option');
+optionTarget.value = emp.name;
+optionTarget.textContent = emp.name;
+document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
+
       }
       
       // Retrieve employee images from Firestore
@@ -1736,6 +1755,29 @@
         }
       });
     }
+
+function updateEmployeeTarget() {
+  const name = document.getElementById('targetEmployeeSelect').value;
+  const points = parseInt(document.getElementById('targetPointsInput').value);
+  if (!name || isNaN(points)) {
+    showAlert('error', 'يرجى تحديد الموظف وإدخال عدد النقاط!', 'targetAlert');
+    return;
+  }
+
+  // البحث عن مفتاح الموظف
+  database.ref('employees').once('value').then(snapshot => {
+    const data = snapshot.val() || {};
+    for (const key in data) {
+      if (data[key].name === name) {
+        database.ref(`employees/${key}`).update({ target: points })
+          .then(() => showAlert('success', 'تم تحديث النقاط بنجاح!', 'targetAlert'))
+          .catch(err => showAlert('error', 'حدث خطأ: ' + err.message, 'targetAlert'));
+        break;
+      }
+    }
+  });
+}
+
     function closeProductModal(event) {
       document.getElementById('productModal').style.display = 'none';
     }
