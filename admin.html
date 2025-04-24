@@ -403,22 +403,41 @@
         </form>
         <div id="saleAlert" class="alert"></div>
       </div>
+
       <h2>Sales Records</h2>
-      <div class="table-container">
-        <table id="salesTable">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Original Price (₪)</th>
-              <th>Sale Price (₪)</th>
-              <th>Seller</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="salesList"></tbody>
-        </table>
-      </div>
+
+<!-- ✨ فلترة المبيعات -->
+<div class="form-section" style="background: #eef6fd; box-shadow: none; margin-bottom: 10px;">
+  <label for="salesFilterType">فلترة المبيعات:</label>
+  <select id="salesFilterType">
+    <option value="all">كل المبيعات</option>
+    <option value="today">اليوم</option>
+    <option value="month">اختر شهر</option>
+    <option value="custom">فترة مخصصة</option>
+  </select>
+  <input type="month" id="salesFilterMonth" style="display:none; margin-left:10px;">
+  <input type="date"  id="salesFilterStart" style="display:none; margin-left:10px;">
+  <input type="date"  id="salesFilterEnd"   style="display:none; margin-left:10px;">
+</div>
+<!-- ✨ نهاية فلترة المبيعات -->
+
+<div class="table-container">
+  <table id="salesTable">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Original Price (₪)</th>
+        <th>Sale Price (₪)</th>
+        <th>Seller</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="salesList"></tbody>
+  </table>
+</div>
+
+
     </div>
 
     <!-- Analytics Tab -->
@@ -671,6 +690,30 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     const firestore = firebase.firestore();
+
+
+
+// ——— إعداد فلترة المبيعات ———
+window.salesData  = [];
+const filterType   = document.getElementById('salesFilterType');
+const filterMonth  = document.getElementById('salesFilterMonth');   // الجديد
+const filterStart  = document.getElementById('salesFilterStart');
+const filterEnd    = document.getElementById('salesFilterEnd');
+
+filterType.addEventListener('change', () => {
+  const v = filterType.value;
+  filterMonth.style.display = (v === 'month')  ? 'inline-block' : 'none';
+  filterStart.style.display = (v === 'custom') ? 'inline-block' : 'none';
+  filterEnd  .style.display = (v === 'custom') ? 'inline-block' : 'none';
+  applySalesFilter();
+});
+filterMonth.addEventListener('change', applySalesFilter);  // الجديد
+filterStart.addEventListener('change', applySalesFilter);
+filterEnd  .addEventListener('change', applySalesFilter);
+// ————————————————————————
+
+
+
 
     // Set header title
     document.getElementById('employeeNameDisplay').textContent = "Admin Dashboard";
@@ -940,23 +983,15 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
       document.getElementById('employeeSelect').style.display = 'none';
       document.getElementById('employeeSelect').required = false;
     }
-    database.ref('sales').on('value', snapshot => {
-      const salesData = snapshot.val() || {};
-      const tbody = document.getElementById('salesList');
-      tbody.innerHTML = Object.entries(salesData).map(([key, sale]) => `
-        <tr>
-          <td>${sale.productName}</td>
-          <td>₪${sale.originalPrice}</td>
-          <td>₪${sale.salePrice}</td>
-          <td>${sale.seller}</td>
-          <td>${new Date(sale.date).toLocaleDateString()}</td>
-          <td>
-            <button class="edit-btn" onclick="editSale('${key}')">Edit</button>
-            <button class="delete-btn" onclick="deleteRecord('sales', '${key}')">Delete</button>
-          </td>
-        </tr>
-      `).join('');
-    });
+database.ref('sales').on('value', snapshot => {
+  const raw = snapshot.val() || {};
+  // خزّن كل السجلات مرة واحدة
+  window.salesData = Object.entries(raw).map(([key, sale]) => ({ key, ...sale }));
+  // ثم اعرضها طبقاً للفلترة
+  applySalesFilter();
+});
+
+
 
     // Employee Accounts listener
     database.ref('employeeAccounts').on('value', snapshot => {
@@ -1781,6 +1816,48 @@ function updateEmployeeTarget() {
     function closeProductModal(event) {
       document.getElementById('productModal').style.display = 'none';
     }
+// ——— دالة فلترة وعرض المبيعات ———
+function applySalesFilter() {
+  let filtered = window.salesData.slice();
+  const now = new Date();
+
+  if (filterType.value === 'today') {
+    filtered = filtered.filter(s => new Date(s.date).toDateString() === now.toDateString());
+  } else if (filterType.value === 'month' && filterMonth.value) {
+  const [year, mon] = filterMonth.value.split('-').map(Number);
+  filtered = filtered.filter(s => {
+    const d = new Date(s.date);
+    return d.getFullYear() === year && d.getMonth() === mon - 1;
+  });
+}
+ else if (filterType.value === 'custom' && filterStart.value && filterEnd.value) {
+    const start = new Date(filterStart.value);
+    const end   = new Date(filterEnd.value);
+    filtered = filtered.filter(s => {
+      const d = new Date(s.date);
+      return d >= start && d <= end;
+    });
+  }
+
+  // عرض النتائج المفلترة
+  const tbody = document.getElementById('salesList');
+  tbody.innerHTML = filtered.map(s => `
+    <tr>
+      <td>${s.productName}</td>
+      <td>₪${s.originalPrice}</td>
+      <td>₪${s.salePrice}</td>
+      <td>${s.seller}</td>
+      <td>${new Date(s.date).toLocaleDateString()}</td>
+      <td>
+        <button class="edit-btn"   onclick="editSale('${s.key}')">Edit</button>
+        <button class="delete-btn" onclick="deleteRecord('sales','${s.key}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+// ————————————————————————
+
+
     /* ---------------------------------------------------------- */
   </script>
 </body>
