@@ -225,6 +225,83 @@
       .logout-btn { width: 100%; text-align: center; }
       .tab-nav button { font-size: 14px; }
     }
+
+.workplan-instructions p {
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+
+
+/* إزالة نقاط القائمة وحذف المسافات الافتراضية */
+#productList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* صندوق الفئة اليومية */
+#productList li {
+  display: inline-block;
+  padding: 10px 20px;
+  margin-top: 10px;
+  border: 2px solid #8e44ad;       /* إطار بنفسجي */
+  border-radius: 8px;
+  background-color: #f8e5fa;        /* خلفية فاتحة بنفسجية خفيفة */
+  font-weight: bold;
+  font-size: 18px;
+  color: #8e44ad;                   /* نص بنفسجي */
+}
+
+
+/* 1. نخلي المربع ثابت أسفل الشاشة */
+.motivational-container {
+  background-color: #f8e5fa;
+  border: 2px solid #8e44ad;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 0px;        /* مسافة بينه وبين اسم الفئة */
+  margin-bottom: 0px;     /* مسافة من أسفل البطاقة */
+}
+
+
+
+
+
+/* 3. شكل النص داخل المربع */
+.motivational-header {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.motivational-header .emoji {
+  margin-left: 8px;
+}
+
+.motivational-text p {
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+
+
+
+
+/* 3) زيادة المسافة بين اسم الفئة والمربع */
+#productList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-bottom: 100px; /* ⬅️ المسافة بين الفئة والمربع التحفيزي */
+}
+
+
+
+
   </style>
 </head>
 <body>
@@ -249,6 +326,8 @@
     <div class="tab-nav">
       <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
       <!-- تم حذف قسم المحادثة -->
+   <button id="tabWorkPlanBtn" onclick="showEmployeeTab('workplan', event)">خطة العمل</button>
+
       <button id="tabSettingsBtn" onclick="showEmployeeTab('settings', event)">الإعدادات</button>
       <button id="langToggleTab" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
     </div>
@@ -289,6 +368,46 @@
       <div class="sales-summary" id="salesSummary"></div>
     </div>
     
+ <!-- واجهة خطة العمل -->
+ <div id="workplan" class="employee-tab" style="display: none;">
+   <div class="workplan-section">
+     <h3>خطة العمل اليومية</h3>
+     <div id="genderPrompt">
+       <p>هل أنت ذكر أم أنثى؟</p>
+       <button onclick="setGender('male')">ذكر</button>
+       <button onclick="setGender('female')">أنثى</button>
+     </div>
+     <div id="planContent" style="display: none;">
+
+<!-- بداية المربع التحفيزي -->
+<div class="motivational-container">
+  <p class="motivational-header">
+    <strong>من القلب للقلب</strong>
+    <span class="emoji">❤️</span>
+  </p>
+  <div class="motivational-text">
+    <p><strong>هالدرب ما بيطلب جري، بيطلب استمرار</strong></p>
+    <p><strong>“شوية شوية” تمشي خطوة بخطوة، وبالراحة تكسب الخبرة.</strong></p>
+    <p><strong>كل يوم خذ فكرة صغيرة، جرّبها وانشرها، وبكرة ضبّط أفكار جديدة.</strong></p>
+    <p><strong>حتى لو وقعت، قوم وضحك: “قطرة قطرة بتحف الصخر”.</strong></p>
+    <p><strong>المهم تظل تبعثر طاقة وإصرار، والصبر مرة ولحظته حلوة.</strong></p>
+    <p><strong>امشي يوم ورا يوم، وبابتسامة خفيفة، رح تلحق نجاح كبير!</strong></p>
+  </div>
+</div>
+<!-- نهاية المربع التحفيزي -->
+
+
+  <div id="planInstructions" class="workplan-instructions">
+    <p><strong>شرح تقسيم الوقت:</strong> اختر يومًا في الأسبوع أو ساعة في اليوم لتحضير المحتوى للنشر، ووزّع وقتك بحيث تخصص كل يوم/ساعة لفئة منتج مختلفة.</p>
+  </div>
+  <h4>الفئة الموصى بها لهذا اليوم:</h4>
+  <ul id="productList"></ul>
+</div>
+
+   </div>
+ </div>
+
+
     <!-- واجهة الإعدادات -->
     <div id="settings" class="employee-tab" style="display: none;">
       <div class="account-settings">
@@ -569,6 +688,127 @@ firestore.collection("employees").doc(employeeName)
       localStorage.clear();
       window.location.href = "index.html";
     }
+
+// ====== بيانات فئات خطة العمل ======
+const workPlanCategories = {
+  male: [
+    "معالجات وسيروم للوجه","مرطبات وكريمات للوجه","البشرة والوجه",
+    "منتجات الحلاقة للرجال","منتجات العناية للرجال","مزيلات عرق للرجال",
+    "عطور","عطور للرجال","تصفيف الشعر","غسولات","سيروم وزيوت للشعر",
+    "شامبو","العناية بالشعر","الوقاية من الشمس والتسمير","العناية بالأسنان",
+    "العناية بالفم"
+  ],
+  female: [
+    "العناية بالجسم","مرطب للجسم","البشرة والوجه","مرطبات وكريمات للوجه",
+    "معطر للجسم","مقشرات وملمعات الجسم","مستلزمات العناية الشخصية",
+    "معالجات وسيروم للوجه","منتجات تقشير الجسم","تفتيح","عطور للنساء","عطور",
+    "العناية بالقدم","النظافة الشخصية للنساء","صابون استحمام","العناية باليدين",
+    "أقنعة الوجه","الوجه","الوقاية من الشمس والتسمير",
+    "العناية بالأسنان","العناية بالفم","إزالة الشعر",
+    "العناية بالحوامل والمرضعة","مزيلات عرق للنساء"
+  ]
+};
+
+
+// ====== ١) إنشاء shuffle ثابت لكل موظف حسب اسمه وجنسه ======
+function getEmployeeOrder(gender) {
+  // ١. إحضار مصفوفة الفئات
+  const cats = [...workPlanCategories[gender]];
+  // ٢. بناء seed من اسم الموظف والجنس
+  let seed = 0;
+  for (let i = 0; i < employeeName.length; i++) {
+    seed = (seed * 31 + employeeName.charCodeAt(i)) % 2147483647;
+  }
+  seed = (seed + (gender === 'male' ? 1 : 2)) % 2147483647;
+  // ٣. LCG لتوليد أرقام عشوائية
+  let rnd = seed;
+  function next() {
+    rnd = (rnd * 16807) % 2147483647;
+    return (rnd - 1) / 2147483646;
+  }
+  // ٤. Fisher–Yates shuffle
+  for (let i = cats.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [cats[i], cats[j]] = [cats[j], cats[i]];
+  }
+  return cats;
+}
+
+// ====== ٢) اختيار الفئة لليوم الحالي من القائمة الكاملة ======
+function getCategoryForToday(gender) {
+  const order = getEmployeeOrder(gender);
+  // حساب عدد الأيام منذ 1 يناير 1970
+  const daysSinceEpoch = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+  // الموضع في القائمة
+  const idx = daysSinceEpoch % order.length;
+  return order[idx];
+}
+
+// ====== ٣) عرض فئة اليوم فقط ======
+function showPlan(gender) {
+  const listEl = document.getElementById('productList');
+  listEl.innerHTML = '';
+  const todayCat = getCategoryForToday(gender);
+  const li = document.createElement('li');
+  li.textContent = todayCat;
+  listEl.appendChild(li);
+  document.getElementById('planContent').style.display = 'block';
+}
+
+
+
+// حفظ الجنس في Firestore وعرض الخطة
+// ====== دالة setGender الجديدة باستخدام Realtime Database ======
+function setGender(gender) {
+  console.log("setGender called with:", gender);
+  // إخفاء واجهة السؤال
+  document.getElementById('genderPrompt').style.display = 'none';
+  // عرض الخطة فوراً
+  showPlan(gender);
+
+  // تحديث فئة gender في الـRealtime Database
+  database.ref('employees')
+    .orderByChild('name')
+    .equalTo(employeeName)
+    .once('value')
+    .then(snapshot => {
+      snapshot.forEach(child => {
+        // child.key هو الـ ID لكل موظف
+        database.ref('employees/' + child.key)
+          .update({ gender: gender })
+          .then(() => console.log("Gender saved to Realtime DB"))
+          .catch(err => console.error("Error saving gender:", err));
+      });
+    })
+    .catch(err => console.error("Error querying employees:", err));
+}
+
+
+
+
+
+// عند الضغط على تبويب “خطة العمل” (Realtime DB)
+document.getElementById('tabWorkPlanBtn').addEventListener('click', () => {
+  database.ref('employees')
+    .orderByChild('name')
+    .equalTo(employeeName)
+    .once('value')
+    .then(snapshot => {
+      let gender = null;
+      snapshot.forEach(child => { gender = child.val().gender; });
+      if (gender) {
+        document.getElementById('genderPrompt').style.display = 'none';
+        showPlan(gender);
+      } else {
+        document.getElementById('genderPrompt').style.display = 'block';
+        document.getElementById('planContent').style.display = 'none';
+      }
+    })
+    .catch(err => console.error("Error fetching gender:", err));
+});
+
+
+
   </script>
 </body>
 </html>
