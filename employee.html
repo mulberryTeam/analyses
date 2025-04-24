@@ -236,7 +236,10 @@
   
   <div class="header">
     <div class="header-left">
-      <img class="header-logo" id="employeePhotoDisplay" src="" alt="صورة الموظف">
+      <img class="header-logo" id="employeePhotoDisplay"
+     src="https://cdn-icons-png.flaticon.com/512/8053/8053444.png"
+     alt="صورة الموظف">
+
       <h1 id="employeeNameDisplay">لوحة الموظف</h1>
     </div>
     <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
@@ -294,8 +297,7 @@
         <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد" oninput="this.value = this.value.toLowerCase()">
         <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
         <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
-        <label id="photoLabel" for="accPhoto">تغيير الصورة الشخصية:</label>
-        <input type="file" id="accPhoto" accept="image/*">
+        
         <button id="updateSettingsBtn" onclick="updateAccountSettings()">تحديث الإعدادات</button>
       </div>
     </div>
@@ -404,7 +406,7 @@ database.ref('employees').orderByChild('name').equalTo(employeeName).once('value
       document.getElementById('settingsHeader').textContent = translations[currentLanguage].settingsHeader;
       document.getElementById('usernameLabel').textContent = translations[currentLanguage].changeUsername;
       document.getElementById('passwordLabel').textContent = translations[currentLanguage].changePassword;
-      document.getElementById('photoLabel').textContent = translations[currentLanguage].changePhoto;
+      
       document.getElementById('updateSettingsBtn').textContent = translations[currentLanguage].updateSettings;
     }
     updateStaticTexts();
@@ -517,27 +519,7 @@ if (!document.getElementById('filterDayInput').value &&
       document.getElementById('filterPeriod').style.display = (type === 'period') ? 'block' : 'none';
     }
 
-    // تحميل صورة الموظف من Firestore وعرضها
-    function loadEmployeePhoto() {
-      firestore.collection("employees").doc(employeeName).get()
-      .then(doc => {
-        if (doc.exists) {
-          const empPhoto = doc.data().photo;
-          console.log("Retrieved employee photo URL:", empPhoto);
-          if (empPhoto) {
-            document.getElementById('employeePhotoDisplay').src = empPhoto;
-          } else {
-            console.warn("No photo URL found for employee.");
-          }
-        } else {
-          console.error("Employee document not found.");
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching employee photo:", error);
-      });
-    }
-    loadEmployeePhoto();
+ 
 
     /* ------------------ واجهة الإعدادات ------------------ */
     function updateAccountSettings() {
@@ -550,48 +532,20 @@ if (!document.getElementById('filterDayInput').value &&
       
       // إذا تم اختيار صورة جديدة
       if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onloadend = function() {
-          const base64data = reader.result.split(',')[1];
-          const formData = new FormData();
-          formData.append("image", base64data);
-          // استخدام API ImgBB لرفع الصورة
-          fetch("https://api.imgbb.com/1/upload?key=d76282687ea27ed446e7883c853038c8", {
-            method: "POST",
-            body: formData
-          })
-          .then(response => response.json())
-          .then(data => {
-            const photoURL = data.data.url;
-            console.log("Uploaded image URL:", photoURL);
-            updates.photo = photoURL;
-            // تحديث أو إنشاء مستند الموظف في Firestore باستخدام set مع merge:true
-            firestore.collection("employees").doc(employeeName).set(updates, { merge: true })
-            .then(() => {
-              loadEmployeePhoto();
-              alert("تم تحديث إعدادات الحساب.");
-            })
-            .catch(error => {
-              console.error("Error updating Firestore:", error);
-              alert("حدث خطأ أثناء تحديث الإعدادات.");
-            });
-          })
-          .catch(error => {
-            console.error("Error uploading image:", error);
-            alert("حدث خطأ أثناء رفع الصورة.");
-          });
-        };
-        reader.readAsDataURL(file);
-      } else {
-        firestore.collection("employees").doc(employeeName).set(updates, { merge: true })
-        .then(() => {
-          alert("تم تحديث إعدادات الحساب.");
-        })
-        .catch(error => {
-          console.error("Error updating Firestore:", error);
-          alert("حدث خطأ أثناء تحديث الإعدادات.");
-        });
+        let updates = {};
+if (newUsername) { updates.username = newUsername; }
+if (newPassword) { updates.password = newPassword; }
+
+firestore.collection("employees").doc(employeeName)
+  .set(updates, { merge: true })
+  .then(() => {
+    alert("تم تحديث إعدادات الحساب.");
+  })
+  .catch(error => {
+    console.error("Error updating Firestore:", error);
+    alert("حدث خطأ أثناء تحديث الإعدادات.");
+  });
+
       }
     }
 
