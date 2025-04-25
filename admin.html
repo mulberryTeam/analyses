@@ -116,21 +116,24 @@
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
     input[type="text"], 
-    input[type="tel"],
-    input[type="number"],
-    input[type="month"],
-    input[type="date"],
-    input[type="password"],
-    textarea,
-    select,
-    input[type="file"] {
-      padding: 12px;
-      width: 300px;
-      margin: 8px 0;
-      border: 2px solid #eee;
-      border-radius: 6px;
-      transition: border-color 0.3s;
-    }
+input[type="tel"],
+input[type="number"],
+input[type="month"],
+input[type="date"],
+input[type="password"],
+textarea,
+select,
+input[type="file"] {
+  padding: 12px;
+  width: 100%;
+  max-width: 300px;
+  margin: 8px 0;
+  border: 2px solid #eee;
+  border-radius: 6px;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
     textarea { resize: vertical; }
     input:focus, select:focus, textarea:focus { border-color: var(--secondary-color); outline: none; }
     button { 
@@ -321,6 +324,36 @@
       object-fit: cover;
       border-radius: 4px;
     }
+
+
+
+
+
+/* == تحسين عرض بطاقات الطلبات على الشاشات الصغيرة == */
+.orders-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  overflow-x: hidden;
+}
+.orders-cards .product-card {
+  flex: 1 1 calc(50% - 20px);
+  max-width: calc(50% - 20px);
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .orders-cards .product-card {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+}
+
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -343,12 +376,22 @@
       <button class="tab" onclick="showTab('employeeLogins')">Employee Logins</button>
       <button class="tab" onclick="showTab('dismissedEmployees')">Dismissed Employees</button>
       <button class="tab" onclick="showTab('prizes')">الجوائز</button>
-      <!-- تم تغيير نص الزر من "بكجات الهدايا" إلى "ادارة الانتاج" -->
       <button class="tab" onclick="showTab('categoriesProducts')">ادارة الانتاج</button>
+      <button class="tab" onclick="showTab('ordersManagement')">ادارة الطلبيات</button>
+
     </div>
 
     <!-- Employees Tab -->
     <div id="employees" class="tab-content">
+
+
+
+
+
+
+
+
+
       <div class="form-section">
         <h2>Add/Edit Employee</h2>
         <form onsubmit="handleEmployeeSubmit(event)">
@@ -649,6 +692,57 @@
       <h2>قائمة المنتجات</h2>
       <div id="productCards" class="product-cards"></div>
     </div>
+
+<!-- Orders Management Tab (ادارة الطلبيات) -->
+<div id="ordersManagement" class="tab-content" style="display: none;">
+<!-- ✨ فلترة طلبيات حسب الموظف -->
+<div style="margin-bottom:20px;">
+  <label for="filterOrderEmployeeSelect" style="font-weight:500;">اختر الموظّف:</label>
+  <select id="filterOrderEmployeeSelect" style="margin-left:10px;">
+    <option value="all" selected>كل الموظّفين</option>
+  </select>
+</div>
+
+  <div class="form-section">
+    <h2>إضافة طلبية جديدة</h2>
+    <form id="orderForm" onsubmit="handleOrderSubmit(event)">
+      <label>عدد المنتجات:</label>
+      <input type="number" id="orderCount" min="1" required>
+      <button type="button" onclick="generateProductFields()">تأكيد</button>
+      <div id="productsContainer"></div>
+
+      <label>الموظف:</label>
+      <select id="orderEmployeeSelect" required>
+        <option value="" disabled selected>اختر الموظف</option>
+      </select>
+
+      <label>نوع الطلبية:</label>
+      <select id="deliveryType" onchange="toggleDeliveryPrice()" required>
+        <option value="pickup">استلام مجاني</option>
+        <option value="delivery">توصيل مدفوع</option>
+      </select>
+      <div id="deliveryPriceContainer" style="display:none; margin-top:8px;">
+        <label>سعر التوصيل (₪):</label>
+        <input type="number" id="deliveryPrice" min="0" step="0.01">
+      </div>
+
+      <p style="margin-top:10px;">المجموع: <strong id="orderTotal">0.00</strong> ₪</p>
+      <button type="submit">حفظ الطلبية</button>
+    </form>
+    <div id="orderAlert" class="alert"></div>
+  </div>
+
+
+
+  <!-- ✨ هنا ستظهر بطاقات طلبيات الموظّف -->
+  
+
+
+
+
+</div>
+
+
   </div>
 
   <!-- Employee Modal for Detailed Data -->
@@ -799,6 +893,8 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
         })
         .catch(error => { console.error("Error fetching employee photo for", emp.name, error); });
       }
+ 
+
     });
 
     // Dismissed Employees Listener
@@ -1856,6 +1952,231 @@ function applySalesFilter() {
   `).join('');
 }
 // ————————————————————————
+
+
+
+
+
+// ——— Orders Management Functions ———
+
+// يملأ قائمة الموظفين تلقائياً
+database.ref('employees').once('value').then(snap => {
+  const data = snap.val()||{};
+  const sel = document.getElementById('orderEmployeeSelect');
+  for (let key in data) {
+    let opt = document.createElement('option');
+    opt.value = data[key].name; opt.textContent = data[key].name;
+    sel.appendChild(opt);
+  }
+});
+
+// يولّد حقول اسم وسعر المنتج بناءً على العدد
+function generateProductFields() {
+  const cnt = parseInt(document.getElementById('orderCount').value);
+  const cont = document.getElementById('productsContainer');
+  cont.innerHTML = '';
+  for (let i=1; i<=cnt; i++) {
+    cont.insertAdjacentHTML('beforeend', `
+      <div style="margin-bottom:8px;">
+        <label>اسم المنتج ${i}:</label>
+        <input type="text" class="prodName" required>
+        <label>سعر المنتج ${i} (₪):</label>
+        <input type="number" class="prodPrice" min="0" step="0.01" required oninput="calculateOrderTotal()">
+      </div>
+    `);
+  }
+  calculateOrderTotal();
+}
+
+// إظهار/إخفاء حقل سعر التوصيل
+function toggleDeliveryPrice() {
+  const show = document.getElementById('deliveryType').value === 'delivery';
+  document.getElementById('deliveryPriceContainer').style.display = show ? 'block' : 'none';
+  calculateOrderTotal();
+}
+
+// حساب المجموع الكلي تلقائيّاً
+function calculateOrderTotal() {
+  let total = 0;
+  document.querySelectorAll('.prodPrice').forEach(inp => {
+    total += parseFloat(inp.value)||0;
+  });
+  if (document.getElementById('deliveryType').value === 'delivery') {
+    total += parseFloat(document.getElementById('deliveryPrice').value)||0;
+  }
+  document.getElementById('orderTotal').textContent = total.toFixed(2);
+}
+
+
+
+
+
+// ===== دالة لعرض طلبيات الموظّف المختار =====
+function renderEmployeeOrders(employeeNameFilter) {
+  const container = document.getElementById('employeeOrdersContainer');
+  container.innerHTML = '';
+  database.ref('orders').once('value').then(snap => {
+    Object.entries(snap.val() || {})
+      .filter(([_, order]) =>
+        employeeNameFilter === 'all' || order.employee === employeeNameFilter
+      )
+      .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+      .forEach(([_, order]) => {
+        const card = document.createElement('div');
+        card.className = 'order-card';
+        card.innerHTML = `
+          <p><strong>عدد المنتجات:</strong> ${order.count}</p>
+          <p><strong>نوع التوصيل:</strong> ${order.type}${order.type==='delivery'?` (₪${order.deliveryPrice})`:''}</p>
+          <p><strong>المجموع:</strong> ₪${parseFloat(order.total).toFixed(2)}</p>
+          <p class="status"><strong>الحالة:</strong> ${order.status}</p>
+        `;
+        container.appendChild(card);
+      });
+  });
+}
+
+
+
+
+
+
+// معالجة إرسال النموذج وتخزينه في Firebase
+async function handleOrderSubmit(e) {
+  e.preventDefault();
+  const names  = [...document.getElementsByClassName('prodName')].map(i=>i.value.trim());
+  const prices = [...document.getElementsByClassName('prodPrice')].map(i=>parseFloat(i.value));
+  if (names.includes('') || prices.some(isNaN)) {
+    showAlert('error','يرجى ملء جميع حقول المنتجات والأسعار!','orderAlert');
+    return;
+  }
+
+
+  const order = {
+    count: names.length,
+    products: names.map((n,i)=>({ name:n, price:prices[i].toFixed(2) })),
+    employee: document.getElementById('orderEmployeeSelect').value,
+    type: document.getElementById('deliveryType').value,
+    deliveryPrice: document.getElementById('deliveryType').value==='delivery'
+                   ? parseFloat(document.getElementById('deliveryPrice').value||0).toFixed(2)
+                   : '0.00',
+    total: document.getElementById('orderTotal').textContent,
+    date: new Date().toISOString(),
+status: 'قيد التجهيز',    // الحالة الافتراضية للطلبية
+
+  };
+  try {
+    if (editingOrderKey) {
+  await database.ref(`orders/${editingOrderKey}`).set(order);
+  editingOrderKey = null;
+
+  document.querySelector('#orderForm button[type="submit"]').textContent = 'حفظ الطلبية';
+} else {
+  await database.ref('orders').push(order);
+}
+
+    showAlert('success','تم حفظ الطلبية بنجاح!','orderAlert');
+    document.getElementById('orderForm').reset();
+    document.getElementById('productsContainer').innerHTML='';
+    document.getElementById('orderTotal').textContent='0.00';
+  } catch(err) {
+    showAlert('error','خطأ: '+err.message,'orderAlert');
+  }
+}
+
+
+
+
+
+
+// ——— Render Orders as Cards ———
+database.ref('orders').on('value', snapshot => {
+  const data = snapshot.val() || {};
+  const container = document.getElementById('ordersManagement');
+  // إزالة أي عرض سابق
+  const old = container.querySelector('.orders-cards');
+  if (old) old.remove();
+
+  let cards = '<div class="orders-cards">';
+
+  Object.entries(data)
+    .sort((a, b) => new Date(b[1].date) - new Date(a[1].date))
+    .forEach(([key, o]) => {
+      const emoji = o.status === 'قيد التجهيز' ? '⏳'
+                  : o.status === 'قيد التوصيل' ? '🚚'
+                  : '✅';
+      cards += `
+        <div class="product-card" style="width:300px; margin:10px; padding:15px; position:relative;">
+          <h3>بواسطة: ${o.employee}</h3>
+          <p><strong>عدد:</strong> ${o.count}</p>
+          <ul>${o.products.map(p=>`<li>${p.name}: ₪${p.price}</li>`).join('')}</ul>
+          <p><strong>نوع:</strong> ${o.type==='delivery'?`توصيل (₪${o.deliveryPrice})`:'استلام مجاني'}</p>
+          <p><strong>الإجمالي:</strong> ₪${o.total}</p>
+          <label>
+            <select onchange="changeOrderStatus('${key}', this.value)">
+              <option value="قيد التجهيز"${o.status==='قيد التجهيز'?' selected':''}>قيد التجهيز</option>
+              <option value="قيد التوصيل"${o.status==='قيد التوصيل'?' selected':''}>قيد التوصيل</option>
+              <option value="تم الاستلام"${o.status==='تم الاستلام'?' selected':''}>تم الاستلام</option>
+            </select> ${emoji}
+          </label>
+          <div style="margin-top:10px;">
+            <button class="edit-btn" onclick="editOrder('${key}')">تعديل</button>
+            <button class="delete-btn" onclick="deleteOrder('${key}')">الغاء الطلب</button>
+          </div>
+        </div>`;
+    });
+  cards += '</div>';
+
+  container.appendChild(document.createRange().createContextualFragment(cards));
+});
+
+
+
+
+
+// مفتاح التعديل (فارغ للإضافة الجديدة)
+let editingOrderKey = null;
+
+// تغيير حالة الطلب
+function changeOrderStatus(key, newStatus) {
+  database.ref(`orders/${key}`).update({ status: newStatus });
+}
+
+// حذف الطلب
+function deleteOrder(key) {
+  if (!confirm('هل تريد إلغاء هذه الطلبية؟')) return;
+  database.ref(`orders/${key}`).remove();
+}
+
+// تحميل بيانات الطلب في النموذج للتعديل
+function editOrder(key) {
+  database.ref(`orders/${key}`).once('value').then(snap => {
+    const o = snap.val();
+    if (!o) return;
+    document.getElementById('orderCount').value = o.count;
+    generateProductFields();
+    const names = document.getElementsByClassName('prodName');
+    const prices = document.getElementsByClassName('prodPrice');
+    o.products.forEach((p,i)=>{
+      names[i].value = p.name;
+      prices[i].value = p.price;
+    });
+    document.getElementById('orderEmployeeSelect').value = o.employee;
+    document.getElementById('deliveryType').value = o.type;
+    toggleDeliveryPrice();
+    if (o.type==='delivery') document.getElementById('deliveryPrice').value = o.deliveryPrice;
+    calculateOrderTotal();
+    // نعدل بدلاً من إنشاء جديد
+    editingOrderKey = key;
+    document.querySelector('#orderForm button[type="submit"]').textContent = 'تحديث الطلبية';
+  });
+}
+
+
+
+
+
+
+
 
 
     /* ---------------------------------------------------------- */
