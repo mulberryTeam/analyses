@@ -15,6 +15,14 @@
   <!-- إضافة مكتبة Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
   <style>
+
+
+:root {
+  --secondary-color: #3498db; /* أو أي لون تريده لإطار البطاقة */
+}
+
+
+
     /* خلفية الفيديو */
     #bgVideo {
       position: fixed;
@@ -310,6 +318,49 @@
 }
 
 
+
+
+
+/* بطاقات الطلبيات */
+.order-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+.order-card {
+  background: #fff;
+  border: 2px solid var(--secondary-color);
+  border-radius: 8px;
+  padding: 15px;
+  width: 280px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: relative;
+}
+.order-card h3 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+.order-card p {
+  margin: 6px 0;
+}
+.order-card .status {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+.order-card .status .emoji {
+  margin-left: 6px;
+}
+
+
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -335,6 +386,7 @@
       <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
    <button id="tabWorkPlanBtn" onclick="showEmployeeTab('workplan', event)">خطة العمل</button>
 <button id="tabInstagramTipsBtn" onclick="showEmployeeTab('instagramTips', event)">نصائح انستجرامية</button>
+<button id="tabOrdersBtn" onclick="showEmployeeTab('orders', event)">الطلبيات</button>
 
 
 
@@ -533,6 +585,15 @@
 
 
     
+
+
+
+
+<!-- Orders Tab -->
+<div id="orders" class="employee-tab" style="display: none;">
+  <h2 style="margin-bottom:15px;">الطلبيات الخاصة بك</h2>
+  <div id="ordersContainer" class="order-cards"></div>
+</div>
 
 
 
@@ -754,9 +815,86 @@ if (!document.getElementById('filterDayInput').value &&
       document.querySelectorAll('.tab-nav button').forEach(btn => btn.classList.remove('active'));
       event.currentTarget.classList.add('active');
       document.getElementById(tabName).style.display = 'block';
+if (tabName === 'orders') {
+    loadOrders();
+  }
     }
 
    
+
+
+function loadOrders() {
+  const container = document.getElementById('ordersContainer');
+
+  database.ref('orders').on('value', snap => {
+    const allOrders = snap.val() || {};const data = Object.entries(allOrders)
+  .filter(([id, o]) =>
+    o.employee &&
+    o.employee.toLowerCase().trim() === employeeName.toLowerCase().trim()
+  )
+  .sort((a, b) => {
+    const dateA = new Date(a[1].date);
+    const dateB = new Date(b[1].date);
+    return dateB - dateA; // الأحدث أولاً
+  });
+
+
+    container.innerHTML = '';
+    const shownOrders = {};
+
+    if (data.length === 0) {
+      container.innerHTML = '<p>لا توجد طلبيات حالياً.</p>';
+      return;
+    }
+
+    data.forEach(([id, order]) => {
+      if (shownOrders[id]) return;
+      shownOrders[id] = true;
+
+      let emoji = '⏳';
+      if (order.status === 'قيد التوصيل') emoji = '🚚';
+      else if (order.status === 'تم الاستلام') emoji = '✔️';
+
+      let productsHTML = '<ul style="padding-left:16px;margin:10px 0;">';
+      if (Array.isArray(order.products)) {
+        order.products.forEach(p => {
+          productsHTML += `<li>${p.name} — ₪${parseFloat(p.price).toFixed(2)}</li>`;
+        });
+      } else {
+        productsHTML += '<li>لا توجد منتجات مسجلة</li>';
+      }
+      productsHTML += '</ul>';
+
+      const card = document.createElement('div');
+      card.className = 'order-card';
+      card.innerHTML = `
+        <h3>تفاصيل الطلبية</h3>
+        <p>عدد المنتجات: ${order.count}</p>
+        ${productsHTML}
+        <p>نوع التوصيل: ${order.type}${order.type === 'delivery' ? ` (₪${order.deliveryPrice})` : ''}</p>
+        <p>المجموع: ₪${parseFloat(order.total).toFixed(2)}</p>
+        <p class="status">الحالة: ${order.status}<span class="emoji">${emoji}</span></p>
+      `;
+      container.appendChild(card);
+    });
+  }, err => {
+    console.error("خطأ بجلب الطلبيات:", err);
+    container.innerHTML = '<p>حدث خطأ أثناء جلب الطلبيات.</p>';
+  });
+}
+
+
+
+// استدعاء loadOrders عند الضغط على تبويب "الطلبيات"
+document.getElementById('tabOrdersBtn').addEventListener('click', () => {
+  loadOrders();
+});
+
+
+
+
+
+
 
     /* ------------------ تسجيل الخروج ------------------ */
     function logout() {
