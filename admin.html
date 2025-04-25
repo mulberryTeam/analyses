@@ -2142,16 +2142,20 @@ function editOrder(key) {
 
     // 2. إعادة إنشاء حقل لكل منتج في الطلب الأصلي
     o.products.forEach(p => {
-      cont.insertAdjacentHTML('beforeend', `
-        <div class="product-entry" style="margin-bottom:8px;">
-          <label>اسم المنتج:</label>
-          <input type="text" class="prodName" required value="${p.name}">
-          <label>سعر المنتج (₪):</label>
-          <input type="number" class="prodPrice" min="0" step="0.01"
-                 required oninput="calculateOrderTotal()" value="${p.price}">
-        </div>
-      `);
-    });
+  cont.insertAdjacentHTML('beforeend', `
+    <div class="product-entry" style="margin-bottom:8px; position:relative;">
+      <label>اسم المنتج:</label>
+      <input type="text" class="prodName" required value="${p.name}">
+      <label>سعر المنتج (₪):</label>
+      <input type="number" class="prodPrice" min="0" step="0.01"
+             required oninput="calculateOrderTotal()" value="${p.price}">
+      <button type="button" class="remove-product-btn"
+              style="position:absolute; top:4px; right:4px;"
+              onclick="removeProductField(this)">حذف</button>
+    </div>
+  `);
+});
+
 
     // 3. ملء بيانات الموظف ونوع التوصيل والسعر (كما في الطلب الأصلي)
     document.getElementById('orderEmployeeSelect').value = o.employee;
@@ -2175,20 +2179,35 @@ function editOrder(key) {
 
 
 
-// دالة لإضافة حقول منتج جديد
 function addProductField() {
   const cont = document.getElementById('productsContainer');
   cont.insertAdjacentHTML('beforeend', `
-    <div class="product-entry" style="margin-bottom:8px;">
+    <div class="product-entry" style="margin-bottom:8px; position:relative;">
       <label>اسم المنتج:</label>
       <input type="text" class="prodName" required>
       <label>سعر المنتج (₪):</label>
       <input type="number" class="prodPrice" min="0" step="0.01"
              required oninput="calculateOrderTotal()">
+      <button type="button" class="remove-product-btn"
+              style="position:absolute; top:4px; right:4px;"
+              onclick="removeProductField(this)">حذف</button>
     </div>
   `);
   calculateOrderTotal();
 }
+
+
+
+
+
+function removeProductField(btn) {
+  // حذف حاوية المنتج وإعادة حساب الإجمالي
+  btn.parentElement.remove();
+  calculateOrderTotal();
+}
+
+
+
 
 
 // ربط زر "إضافة منتج جديد"
