@@ -706,10 +706,9 @@ input[type="file"] {
   <div class="form-section">
     <h2>إضافة طلبية جديدة</h2>
     <form id="orderForm" onsubmit="handleOrderSubmit(event)">
-      <label>عدد المنتجات:</label>
-      <input type="number" id="orderCount" min="1" required>
-      <button type="button" onclick="generateProductFields()">تأكيد</button>
-      <div id="productsContainer"></div>
+     <button type="button" id="addProductBtn">إضافة منتج جديد</button>
+<div id="productsContainer"></div>
+
 
       <label>الموظف:</label>
       <select id="orderEmployeeSelect" required>
@@ -1970,23 +1969,7 @@ database.ref('employees').once('value').then(snap => {
   }
 });
 
-// يولّد حقول اسم وسعر المنتج بناءً على العدد
-function generateProductFields() {
-  const cnt = parseInt(document.getElementById('orderCount').value);
-  const cont = document.getElementById('productsContainer');
-  cont.innerHTML = '';
-  for (let i=1; i<=cnt; i++) {
-    cont.insertAdjacentHTML('beforeend', `
-      <div style="margin-bottom:8px;">
-        <label>اسم المنتج ${i}:</label>
-        <input type="text" class="prodName" required>
-        <label>سعر المنتج ${i} (₪):</label>
-        <input type="number" class="prodPrice" min="0" step="0.01" required oninput="calculateOrderTotal()">
-      </div>
-    `);
-  }
-  calculateOrderTotal();
-}
+
 
 // إظهار/إخفاء حقل سعر التوصيل
 function toggleDeliveryPrice() {
@@ -2147,27 +2130,44 @@ function deleteOrder(key) {
   database.ref(`orders/${key}`).remove();
 }
 
-// تحميل بيانات الطلب في النموذج للتعديل
+// ——— تعديل الطلبية (متوافق مع إضافة منتجات ديناميكية) ———
 function editOrder(key) {
   database.ref(`orders/${key}`).once('value').then(snap => {
     const o = snap.val();
     if (!o) return;
-    document.getElementById('orderCount').value = o.count;
-    generateProductFields();
-    const names = document.getElementsByClassName('prodName');
-    const prices = document.getElementsByClassName('prodPrice');
-    o.products.forEach((p,i)=>{
-      names[i].value = p.name;
-      prices[i].value = p.price;
+
+    // 1. مسح الحقول السابقة
+    const cont = document.getElementById('productsContainer');
+    cont.innerHTML = '';
+
+    // 2. إعادة إنشاء حقل لكل منتج في الطلب الأصلي
+    o.products.forEach(p => {
+      cont.insertAdjacentHTML('beforeend', `
+        <div class="product-entry" style="margin-bottom:8px;">
+          <label>اسم المنتج:</label>
+          <input type="text" class="prodName" required value="${p.name}">
+          <label>سعر المنتج (₪):</label>
+          <input type="number" class="prodPrice" min="0" step="0.01"
+                 required oninput="calculateOrderTotal()" value="${p.price}">
+        </div>
+      `);
     });
+
+    // 3. ملء بيانات الموظف ونوع التوصيل والسعر (كما في الطلب الأصلي)
     document.getElementById('orderEmployeeSelect').value = o.employee;
-    document.getElementById('deliveryType').value = o.type;
+    document.getElementById('deliveryType').value        = o.type;
     toggleDeliveryPrice();
-    if (o.type==='delivery') document.getElementById('deliveryPrice').value = o.deliveryPrice;
+    if (o.type === 'delivery') {
+      document.getElementById('deliveryPrice').value = o.deliveryPrice;
+    }
+
+    // 4. إعادة حساب الإجمالي
     calculateOrderTotal();
-    // نعدل بدلاً من إنشاء جديد
+
+    // 5. وضع مفتاح التعديل وتغيير نص زر الحفظ
     editingOrderKey = key;
-    document.querySelector('#orderForm button[type="submit"]').textContent = 'تحديث الطلبية';
+    document.querySelector('#orderForm button[type="submit"]')
+            .textContent = 'تحديث الطلبية';
   });
 }
 
@@ -2175,6 +2175,28 @@ function editOrder(key) {
 
 
 
+// دالة لإضافة حقول منتج جديد
+function addProductField() {
+  const cont = document.getElementById('productsContainer');
+  cont.insertAdjacentHTML('beforeend', `
+    <div class="product-entry" style="margin-bottom:8px;">
+      <label>اسم المنتج:</label>
+      <input type="text" class="prodName" required>
+      <label>سعر المنتج (₪):</label>
+      <input type="number" class="prodPrice" min="0" step="0.01"
+             required oninput="calculateOrderTotal()">
+    </div>
+  `);
+  calculateOrderTotal();
+}
+
+
+// ربط زر "إضافة منتج جديد"
+document.getElementById('addProductBtn')
+        .addEventListener('click', addProductField);
+
+// إنشاء حقل منتج واحد تلقائياً عند تحميل الصفحة
+addProductField();
 
 
 
