@@ -96,15 +96,7 @@
       border-bottom: 3px solid #3498db;
       font-weight: bold;
     }
-    /* زر الترجمة بلون مميز */
-    #langToggleTab {
-      background: #f39c12;
-      color: #fff;
-      border-radius: 4px;
-    }
-    #langToggleTab:hover {
-      background: #e67e22;
-    }
+    
     /* واجهة التحليلات - فلتر المبيعات */
     .filter-section {
       margin-bottom: 20px;
@@ -300,6 +292,22 @@
 }
 
 
+/* تنسيقات قسم نصائح انستجرامية */
+.instagram-tips-section {
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+.instagram-tips-section h3 {
+  margin-top: 0;
+  color: #C13584; /* لون يشبه شعار انستجرام */
+}
+.instagram-tips-section ul {
+  list-style: disc inside;
+  padding-left: 0;
+}
 
 
   </style>
@@ -325,11 +333,11 @@
     <!-- قائمة الألسنة مع زر الترجمة -->
     <div class="tab-nav">
       <button id="tabAnalyticsBtn" class="active" onclick="showEmployeeTab('analytics', event)">تحليلات</button>
-      <!-- تم حذف قسم المحادثة -->
    <button id="tabWorkPlanBtn" onclick="showEmployeeTab('workplan', event)">خطة العمل</button>
+<button id="tabInstagramTipsBtn" onclick="showEmployeeTab('instagramTips', event)">نصائح انستجرامية</button>
 
       <button id="tabSettingsBtn" onclick="showEmployeeTab('settings', event)">الإعدادات</button>
-      <button id="langToggleTab" onclick="toggleLanguage()"><i class="fas fa-language"></i></button>
+      
     </div>
     
     <!-- واجهة التحليلات -->
@@ -372,13 +380,13 @@
  <div id="workplan" class="employee-tab" style="display: none;">
    <div class="workplan-section">
      <h3>خطة العمل اليومية</h3>
+
      <div id="genderPrompt">
        <p>هل أنت ذكر أم أنثى؟</p>
        <button onclick="setGender('male')">ذكر</button>
        <button onclick="setGender('female')">أنثى</button>
      </div>
-     <div id="planContent" style="display: none;">
-
+ <div id="planContent" style="display: none;">
 <!-- بداية المربع التحفيزي -->
 <div class="motivational-container">
   <p class="motivational-header">
@@ -406,6 +414,123 @@
 
    </div>
  </div>
+<!-- بداية قسم نصائح انستجرامية -->
+<div id="instagramTips" class="employee-tab" style="display: none;">
+  <div class="instagram-tips-section">
+    <h3>نصائح انستجرامية</h3>
+    <ul id="instagramTipsList">
+      
+  <li>
+    <strong>كيف تعمل خوارزمية إنستجرام</strong>
+    <ul>
+      <li>الأولوية للمحتوى القريب من المستخدمين</li>
+      <li>كل ما يتفاعل الجمهور مع منشوراتك (إعجاب، تعليق، حفظ، مشاركة) أسرع، خوارزمية إنستا تطلع محتواك لناس أكثر.</li>
+      <li>التوقيت مهم: أول ساعة بعد النشر تحدد مدى انتشارك.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>توقّع السلوك</strong>
+    <ul>
+      <li>إنستا تحاول تعرف أي نوع محتوى يعجب متابعينك: إذا تفاعلوا أكثر مع الريلز، بتزيد أولوية الريلز.</li>
+    </ul>
+  </li>
+  <li>
+    <strong>الاستمرارية معيار رئيسي</strong>
+    <ul>
+      <li>حساب نشط بنشر بانتظام (يوميًّا أو كل يومين) بيكسب ثقة الخوارزمية.</li>
+    </ul>
+  </li>
+</ul>
+
+      <!-- مواعيد النشر المناسبة -->
+    <h4>مواعيد النشر المناسبة:</h4>
+    <table class="instagram-tips-table" style="width:100%; border-collapse: collapse; margin-bottom: 15px;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0;">نوع المحتوى</th>
+          <th style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0;">أنسب الوقت بنشره</th>
+          <th style="border: 1px solid #ddd; padding: 8px; background: #f0f0f0;">ملاحظات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">ريلز Reels</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">١٠–١٢ ظهرًا &amp; ٧–٩ مساءً</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">جمهور يتصفح للترفيه قبل الغداء وبعد الشغل/الدراسة</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">المنشورات Posts</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">٨–١٠ صباحًا &amp; ٥–٧ مساءً</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">لحظات التصفح الصباحية والمسائية</td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">القصص Stories</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">طوال اليوم (تركيز بين ١٢–٣ عصرًا)</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">حافظ على ظهور مستمرّ بين متابعينك</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- نصيحة احترافية -->
+    <p style="font-weight: bold; font-size: 16px; line-height: 1.4; margin-top: 10px;">
+      نصيحة احترافية: جرّب تتابع تحليلات حسابك (Insights) وتضبط الأوقات حسب جمهورك بالضبط؛ لكل حساب إيقاعه الخاص.
+    </p>
+    <!-- أسلوب التقديم القلبي -->
+    <h4 style="font-weight: bold; margin-top: 20px;">أسلوب التقديم القلبي:</h4>
+    <ul style="margin-top: 10px; line-height: 1.6;">
+      <li><strong>استخدم صورك الشخصية</strong></li>
+      <li>لقعدة بالقهوة، أو في الجامعة، أو ماشي في الشارع…</li>
+      <li>ضع صورة المنتج بشكل أنيق فوق خلفيتك الطبيعية، مثلاً ملصق صغير (sticker) أو فريم بسيط.</li>
+      <li><strong>احكي قصة قصيرة وشاركها مع متابعينك من حياتك</strong></li>
+      <li>لغة بسيطة، صوتك الحقيقي، وكأنك عم تحكي لصاحبك.</li>
+      <li><strong>خلي المحتوى إنساني</strong></li>
+      <li>إضحك وابتسم، اشتغل بلقطات candid (غير مصطنعة)، تفاعل مع متابعينك بالـ stickers والـ polls.</li>
+    </ul>
+
+    <!-- اختصار الفكرة وجاذبيتها -->
+    <h4 style="font-weight: bold; margin-top: 20px;">اختصار الفكرة وجاذبيتها:</h4>
+    <ul style="margin-top: 10px; line-height: 1.6;">
+      <li><strong>شرح شورت وفوري</strong></li>
+      <li>لا تزيد عن ٣ جمل في التعليق: “المرطب هذا خفيف جدًا على البشرة، بياخد لون طبيعي وبيحافظ على الترطيب.”</li>
+      <li>استخدم emojis لتقسيم النص (🌿✨💧).</li>
+      <li>ستيكرات تفاعل وأسئلة وستيكر الخيارات</li>
+      <li>مثلاً: “مين جرب عطر نيكسا بديل برادا؟ خبروني!”</li>
+      <li>“احفظوا الصورة عشان ترجعوا لها وقت الحاجة.”</li>
+    </ul>
+
+    <!-- كيف تزيد التفاعل والوصول -->
+    <h4 style="font-weight: bold; margin-top: 20px;">كيف تزيد التفاعل والوصول:</h4>
+    <ul style="margin-top: 10px; line-height: 1.6;">
+      <li><strong>استغلّ الـ Hashtags بذكاء</strong></li>
+      <li>٥–٧ هاشتاغات متخصصة (مثلاً #جمال_طبيعي #mulberry #aaup #SkinCare)</li>
+      <li>فهم الـ niche يلي بتنشر فيه واستخدم هاشتاغات متداولة عند جمهورك.</li>
+      <li><strong>انشر على الستوري بكثرة</strong></li>
+      <li>قصص تفاعلية (استبيان، سؤال، شريط تمرير).</li>
+      <li>رابط مباشر للمنتج (Swipe Up أو Sticker الرابط).</li>
+      <li><strong>تعاون مع حسابات صغيرة (Micro-influencers)</strong></li>
+      <li>تبادل “تاج” أو “Shoutout” لزيادة الظهور.</li>
+      <li><strong>تابع وتفاعل مع جمهورك</strong></li>
+      <li>إرفع إشعارات تعليقاتك ورد عليها خلال ساعة.</li>
+      <li>خليك متابع لبوستاتهم وحط لايك وتعليق حتى يردوا لك الجميل.</li>
+      <li><strong>عيد نشر المحتوى بحالة جديدة</strong></li>
+      <li>خذ نفس الفيديو ريلز وقطّع منه مقطع ستوري، أو انسخ أهم جمل الإعلان في بوست ثابت.</li>
+    </ul>
+
+    <!-- أهم شيء تفتكرّه -->
+    <p style="font-weight: bold; font-size: 18px; margin-top: 20px; line-height: 1.5;">
+      🥇 أهم شيء تفتكرّه:<br>
+      “المحتوى القريب من قلب المشاهد + الشرح القصير والواضح = تفاعل أعلى وانتشار أسرع.”<br>
+      امشي على هالنصايح، وجرب كل عنصر بخفة وروح مرحة، ومع الاستمرارية رح تلاقي حسابك عم يكبر وانت عم تستمتع بالتجربة!
+    </p>
+
+  </div>
+</div>
+<!-- نهاية قسم نصائح انستجرامية -->
+
+
+    
+
+
 
 
     <!-- واجهة الإعدادات -->
@@ -495,7 +620,8 @@
     };
 
     // استرجاع اسم الموظف المخزن في localStorage
-    const employeeName = localStorage.getItem('employeeName');
+    let employeeName = localStorage.getItem('employeeName');
+
     if (!employeeName) {
       alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
       window.location.href = "index.html";
@@ -511,24 +637,7 @@ database.ref('employees').orderByChild('name').equalTo(employeeName).once('value
   });
 
 
-    // تحديث النصوص الثابتة للواجهة بناءً على اللغة الحالية
-    function updateStaticTexts() {
-      document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
-      document.querySelector('.logout-btn').textContent = translations[currentLanguage].logout;
-      document.getElementById('tabAnalyticsBtn').textContent = translations[currentLanguage].tabAnalytics;
-      document.getElementById('tabSettingsBtn').textContent = translations[currentLanguage].tabSettings;
-      document.getElementById('filterLabel').textContent = translations[currentLanguage].filterLabel;
-      document.getElementById('radioDayLabel').innerHTML = `<input type="radio" name="filterType" value="day" checked onclick="toggleFilterInputs('day')"> ${translations[currentLanguage].radioDay}`;
-      document.getElementById('radioMonthLabel').innerHTML = `<input type="radio" name="filterType" value="month" onclick="toggleFilterInputs('month')"> ${translations[currentLanguage].radioMonth}`;
-      document.getElementById('radioPeriodLabel').innerHTML = `<input type="radio" name="filterType" value="period" onclick="toggleFilterInputs('period')"> ${translations[currentLanguage].radioPeriod}`;
-      document.getElementById('salesHeader').textContent = translations[currentLanguage].salesHeader;
-      document.getElementById('settingsHeader').textContent = translations[currentLanguage].settingsHeader;
-      document.getElementById('usernameLabel').textContent = translations[currentLanguage].changeUsername;
-      document.getElementById('passwordLabel').textContent = translations[currentLanguage].changePassword;
-      
-      document.getElementById('updateSettingsBtn').textContent = translations[currentLanguage].updateSettings;
-    }
-    updateStaticTexts();
+    
 
     // استرجاع تعيينات البائع المميز
     let topSellerDesignations = {};
@@ -641,32 +750,56 @@ if (!document.getElementById('filterDayInput').value &&
  
 
     /* ------------------ واجهة الإعدادات ------------------ */
-    function updateAccountSettings() {
-      const newUsername = document.getElementById('accUsername').value.trim();
-      const newPassword = document.getElementById('accPassword').value.trim();
-      const fileInput = document.getElementById('accPhoto');
-      let updates = {};
-      if(newUsername) { updates.username = newUsername; }
-      if(newPassword) { updates.password = newPassword; }
-      
-      // إذا تم اختيار صورة جديدة
-      if (fileInput.files.length > 0) {
-        let updates = {};
-if (newUsername) { updates.username = newUsername; }
-if (newPassword) { updates.password = newPassword; }
+   function updateAccountSettings() {
+  const newUsername = document.getElementById('accUsername').value.trim();
+  const newPassword = document.getElementById('accPassword').value.trim();
 
-firestore.collection("employees").doc(employeeName)
-  .set(updates, { merge: true })
-  .then(() => {
-    alert("تم تحديث إعدادات الحساب.");
-  })
-  .catch(error => {
-    console.error("Error updating Firestore:", error);
-    alert("حدث خطأ أثناء تحديث الإعدادات.");
-  });
+  if (!newUsername && !newPassword) {
+    alert("لم يتغير اسم المستخدم أو كلمة المرور.");
+    return;
+  }
 
+  const updates = {};
+  if (newUsername) updates.username = newUsername;
+  if (newPassword) updates.password = newPassword;
+
+  // البحث عن السجل القديم أولاً
+  database.ref('employees')
+    .orderByChild('name')
+    .equalTo(employeeName)
+    .once('value')
+    .then(snapshot => {
+      if (!snapshot.exists()) {
+        throw new Error("لم يتم العثور على بيانات الموظف.");
       }
-    }
+      // نجمع وعود التحديث لكل سجل (غالباً واحد)
+      const promises = [];
+      snapshot.forEach(childSnap => {
+        const key = childSnap.key;
+        promises.push(
+          database.ref(`employees/${key}`).update(updates)
+        );
+      });
+      // ننتظر انتهاء كل التحديثات
+      return Promise.all(promises);
+    })
+    .then(() => {
+      // بعد نجاح التحديث في القاعدة، نحدّث الواجهة والمتغيرات محلياً
+      if (newUsername) {
+        localStorage.setItem('employeeName', newUsername);
+        employeeName = newUsername;  // مسموح لأننا استبدلنا const بـ let
+        document.getElementById('employeeNameDisplay').textContent =
+          translations[currentLanguage].welcome + newUsername;
+      }
+      alert("تم تحديث إعدادات الحساب بنجاح.");
+    })
+    .catch(error => {
+      console.error("Error updating RTDB:", error);
+      alert("حدث خطأ أثناء تحديث الإعدادات: " + error.message);
+    });
+}
+
+
 
     /* ------------------ تغيير الألسنة ------------------ */
     function showEmployeeTab(tabName, event) {
@@ -676,12 +809,7 @@ firestore.collection("employees").doc(employeeName)
       document.getElementById(tabName).style.display = 'block';
     }
 
-    /* ------------------ تبديل اللغة ------------------ */
-    function toggleLanguage() {
-      currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
-      updateStaticTexts();
-      loadSalesData();
-    }
+   
 
     /* ------------------ تسجيل الخروج ------------------ */
     function logout() {
