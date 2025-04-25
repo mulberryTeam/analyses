@@ -336,7 +336,8 @@
    <button id="tabWorkPlanBtn" onclick="showEmployeeTab('workplan', event)">خطة العمل</button>
 <button id="tabInstagramTipsBtn" onclick="showEmployeeTab('instagramTips', event)">نصائح انستجرامية</button>
 
-      <button id="tabSettingsBtn" onclick="showEmployeeTab('settings', event)">الإعدادات</button>
+
+
       
     </div>
     
@@ -533,18 +534,9 @@
 
 
 
-    <!-- واجهة الإعدادات -->
-    <div id="settings" class="employee-tab" style="display: none;">
-      <div class="account-settings">
-        <h3 id="settingsHeader">إعدادات الحساب</h3>
-        <label id="usernameLabel" for="accUsername">تغيير اسم المستخدم:</label>
-        <input type="text" id="accUsername" placeholder="اسم المستخدم الجديد" oninput="this.value = this.value.toLowerCase()">
-        <label id="passwordLabel" for="accPassword">تغيير كلمة المرور:</label>
-        <input type="password" id="accPassword" placeholder="كلمة المرور الجديدة">
-        
-        <button id="updateSettingsBtn" onclick="updateAccountSettings()">تحديث الإعدادات</button>
-      </div>
-    </div>
+
+
+
   </div>
   
   <script>
@@ -749,55 +741,7 @@ if (!document.getElementById('filterDayInput').value &&
 
  
 
-    /* ------------------ واجهة الإعدادات ------------------ */
-   function updateAccountSettings() {
-  const newUsername = document.getElementById('accUsername').value.trim();
-  const newPassword = document.getElementById('accPassword').value.trim();
-
-  if (!newUsername && !newPassword) {
-    alert("لم يتغير اسم المستخدم أو كلمة المرور.");
-    return;
-  }
-
-  const updates = {};
-  if (newUsername) updates.username = newUsername;
-  if (newPassword) updates.password = newPassword;
-
-  // البحث عن السجل القديم أولاً
-  database.ref('employees')
-    .orderByChild('name')
-    .equalTo(employeeName)
-    .once('value')
-    .then(snapshot => {
-      if (!snapshot.exists()) {
-        throw new Error("لم يتم العثور على بيانات الموظف.");
-      }
-      // نجمع وعود التحديث لكل سجل (غالباً واحد)
-      const promises = [];
-      snapshot.forEach(childSnap => {
-        const key = childSnap.key;
-        promises.push(
-          database.ref(`employees/${key}`).update(updates)
-        );
-      });
-      // ننتظر انتهاء كل التحديثات
-      return Promise.all(promises);
-    })
-    .then(() => {
-      // بعد نجاح التحديث في القاعدة، نحدّث الواجهة والمتغيرات محلياً
-      if (newUsername) {
-        localStorage.setItem('employeeName', newUsername);
-        employeeName = newUsername;  // مسموح لأننا استبدلنا const بـ let
-        document.getElementById('employeeNameDisplay').textContent =
-          translations[currentLanguage].welcome + newUsername;
-      }
-      alert("تم تحديث إعدادات الحساب بنجاح.");
-    })
-    .catch(error => {
-      console.error("Error updating RTDB:", error);
-      alert("حدث خطأ أثناء تحديث الإعدادات: " + error.message);
-    });
-}
+   
 
 
 
@@ -934,6 +878,7 @@ document.getElementById('tabWorkPlanBtn').addEventListener('click', () => {
     })
     .catch(err => console.error("Error fetching gender:", err));
 });
+
 
 
 
