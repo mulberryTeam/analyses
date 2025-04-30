@@ -215,13 +215,62 @@
 
       // تحقق من بيانات المدير
       // يمكنك تعديل اسم المستخدم وكلمة المرور حسب حاجتك
-      if (username === "a7mad.mutaz" && password === "123&ahmad") {
-        localStorage.setItem('userRole', 'admin');
-        window.location.href = "admin.html";
-        return;
-      }
+     
 
       // التحقق من حسابات الموظفين في Firebase
+// التحقق من حساب الأدمن في Firebase
+database.ref('adminAccounts').orderByChild('username').equalTo(username).once('value')
+.then(snapshot => {
+  if(snapshot.exists()) {
+    let valid = false;
+    let adminData;
+    snapshot.forEach(childSnapshot => {
+      adminData = childSnapshot.val();
+      if (adminData.password === password) {
+        valid = true;
+      }
+    });
+    if(valid) {
+      localStorage.setItem('userRole', 'admin');
+      localStorage.setItem('adminUsername', adminData.username);
+      window.location.href = "admin.html";
+      return;
+    }
+  }
+
+  // التحقق من حسابات الموظفين في Firebase (إذا لم يكن أدمن)
+  database.ref('employeeAccounts').orderByChild('username').equalTo(username).once('value')
+  .then(snapshot => {
+    if(snapshot.exists()) {
+      let valid = false;
+      let employeeData;
+      snapshot.forEach(childSnapshot => {
+        employeeData = childSnapshot.val();
+        if (employeeData.password === password) {
+          valid = true;
+        }
+      });
+      if(valid) {
+        localStorage.setItem('userRole', 'employee');
+        localStorage.setItem('employeeName', employeeData.name);
+        localStorage.setItem('employeeUsername', employeeData.username);
+        window.location.href = "employee.html";
+      } else {
+        loginAlert.textContent = translations[currentLang].invalidEmployeePassword;
+      }
+    } else {
+      loginAlert.textContent = translations[currentLang].noAccountFound;
+    }
+  })
+  .catch(error => {
+    loginAlert.textContent = translations[currentLang].errorPrefix + error.message;
+  });
+
+})
+.catch(error => {
+  loginAlert.textContent = translations[currentLang].errorPrefix + error.message;
+});
+
       database.ref('employeeAccounts').orderByChild('username').equalTo(username).once('value')
       .then(snapshot => {
         if(snapshot.exists()) {
