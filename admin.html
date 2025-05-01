@@ -433,6 +433,9 @@ input[type="file"] {
           <input type="text" id="saleItem" placeholder="Product Name" required>
           <input type="number" id="originalPrice" placeholder="Original Price (₪)" min="0" step="0.01" required>
           <input type="number" id="salePrice" placeholder="Sale Price (₪)" min="0" step="0.01" required>
+<label for="saleDate">التاريخ:</label>
+<input type="date" id="saleDate" style="margin: 8px 0;">
+
           <select id="sellerType" required onchange="toggleEmployeeSelect()">
             <option value="" disabled selected>Select Seller Type</option>
             <option value="store">Store</option>
@@ -1023,6 +1026,12 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
       const originalPrice = parseFloat(document.getElementById('originalPrice').value);
       const salePrice = parseFloat(document.getElementById('salePrice').value);
       const sellerType = document.getElementById('sellerType').value;
+// ✨ التقاط التاريخ المختار أو استخدام التاريخ التلقائي
+const dateInput   = document.getElementById('saleDate').value;
+const saleDateISO = dateInput
+    ? new Date(dateInput).toISOString()
+    : new Date().toISOString();
+
       const employeeNameSale = sellerType === 'employee' ? document.getElementById('employeeSelect').value.trim() : null;
       if (!item || isNaN(originalPrice) || isNaN(salePrice) || !sellerType) {
         showAlert('error', 'Please fill all fields correctly!', 'saleAlert');
@@ -1038,7 +1047,7 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
           originalPrice: originalPrice.toFixed(2),
           salePrice: salePrice.toFixed(2),
           seller: sellerType === 'employee' ? employeeNameSale : 'Store',
-          date: new Date().toISOString()
+          date: saleDateISO
         };
         if (editingSaleKey) {
           await database.ref(`sales/${editingSaleKey}`).update(saleDataObj);
@@ -1066,6 +1075,10 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
           document.getElementById('employeeSelect').value = sale.seller;
         }
         editingSaleKey = key;
+// تعبئة التاريخ بحالة التحرير (قطع جزء التاريخ من ISO)
+const existingDate = sale.date.slice(0, 10); 
+document.getElementById('saleDate').value = existingDate;
+
         document.getElementById('saleSubmitBtn').textContent = 'Update Sale';
         document.getElementById('cancelSaleBtn').style.display = 'inline-block';
       });
@@ -1077,6 +1090,9 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
       document.getElementById('cancelSaleBtn').style.display = 'none';
       document.getElementById('employeeSelect').style.display = 'none';
       document.getElementById('employeeSelect').required = false;
+// إعادة تعيين حقل التاريخ
+document.getElementById('saleDate').value = '';
+
     }
 database.ref('sales').on('value', snapshot => {
   const raw = snapshot.val() || {};
