@@ -704,6 +704,22 @@ body.leader-theme .header-logo {
 
 
 
+
+
+
+#leaderFilterDisplay {
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #8e44ad;
+  margin: 10px 0;
+}
+
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -1262,94 +1278,72 @@ if (!document.getElementById('filterDayInput').value &&
 // ابدأ الإضافة من هنا
 async function calculateTeamProfit(leaderKey) {
   try {
-    // 1. الحصول على بيانات القائد
+    const filterFn = createDateFilter(); // استخدام الدالة المشتركة
     const leaderSnapshot = await database.ref(`employees/${leaderKey}`).once('value');
     const leaderData = leaderSnapshot.val();
-    
-    // 2. التحقق من وجود فريق
-    if (!leaderData.team || leaderData.team.length === 0) {
-      console.log('لا يوجد أعضاء في الفريق');
-      return 0;
-    }
 
-    // 3. جلب بيانات جميع الموظفين
-    const allEmployeesSnapshot = await database.ref('employees').once('value');
-    const allEmployees = allEmployeesSnapshot.val();
+    if (!leaderData.team) return 0;
 
+    const allEmployees = (await database.ref('employees').once('value')).val();
     let totalProfit = 0;
-    
-    // 4. التكرار عبر أعضاء الفريق
+
     for (const memberKey of leaderData.team) {
       const member = allEmployees[memberKey];
-      
-      // 5. التحقق من وجود الموظف
-      if (!member) {
-        console.error('موظف غير موجود:', memberKey);
-        continue;
-      }
+      if (!member) continue;
 
-      // 6. جلب مبيعات الموظف
-      const salesSnapshot = await database.ref('sales')
+      const sales = (await database.ref('sales')
         .orderByChild('seller')
         .equalTo(member.name)
-        .once('value');
+        .once('value')).val();
 
-      // 7. حساب أرباح الموظف
-      salesSnapshot.forEach(saleChild => {
-        const sale = saleChild.val();
-        const profit = (sale.salePrice - sale.originalPrice)/2;
-        totalProfit += profit;
-        console.log(`بيع لـ ${member.name}: ${profit} ₪`);
-      });
+      for (const key in sales) {
+        const sale = sales[key];
+        if (filterFn(sale)) { // تطبيق الفلترة هنا
+          totalProfit += (sale.salePrice - sale.originalPrice) * 0.5;
+        }
+      }
     }
 
-    console.log('إجمالي أرباح الفريق:', totalProfit);
     return totalProfit;
-    
+
   } catch (error) {
-    console.error("خطأ في حساب أرباح الفريق:", error);
+    console.error("فشل حساب أرباح الفريق:", error);
     return 0;
   }
 }
 
 async function showLeaderBonus(leaderKey) {
   if (!isLeader) return;
-  
+
   try {
-    const totalProfit = await calculateTeamProfit(leaderKey);
-    const percentage = totalProfit * 0.10;
-
-    console.log('عرض المكافأة:', { totalProfit, percentage });
+    const filterFn = createDateFilter(); // نفس الدالة المشتركة
     
+    // حساب أرباح الفريق
+    const teamProfit = await calculateTeamProfit(leaderKey);
+    
+    // حساب الأرباح الشخصية مع نفس الفلترة
+    const personalSales = (await database.ref('sales')
+      .orderByChild('seller')
+      .equalTo(employeeName)
+      .once('value')).val();
+
+    let personalProfit = 0;
+    for (const key in personalSales) {
+      const sale = personalSales[key];
+      if (filterFn(sale)) { // تطبيق نفس الفلترة
+        personalProfit += (sale.salePrice - sale.originalPrice) * 0.5;
+      }
+    }
+
+    // تحديث الواجهة
     document.getElementById('leaderBonus').style.display = 'block';
-    document.getElementById('teamTotal').textContent = totalProfit.toFixed(2);
-    document.getElementById('leaderPercentage').textContent = percentage.toFixed(2);
-// ابدأ الإضافة هنا
-// حساب أرباح القائد الشخصية
-const personalSales = await database.ref('sales')
-  .orderByChild('seller')
-  .equalTo(employeeName)
-  .once('value');
+    document.getElementById('teamTotal').textContent = teamProfit.toFixed(2);
+    document.getElementById('leaderPercentage').textContent = (teamProfit * 0.1).toFixed(2);
+    document.getElementById('personalProfit').textContent = personalProfit.toFixed(2);
+    document.getElementById('totalEarnings').textContent = (personalProfit + (teamProfit * 0.1)).toFixed(2);
 
-let personalProfit = 0;
-personalSales.forEach(sale => {
-  const data = sale.val();
-  // ابدأ التعديل هنا
-const profit = data.salePrice - data.originalPrice;
-personalProfit += profit * 0.5; // يأخذ 50% من ربح كل عملية بيع
-// انتهاء التعديل
-});
-
-// حساب المجموع الكلي
-const totalEarnings = personalProfit + percentage;
-
-// تحديث الواجهة
-document.getElementById('personalProfit').textContent = personalProfit.toFixed(2);
-document.getElementById('totalEarnings').textContent = totalEarnings.toFixed(2);
-// انتهاء الإضافة
-    
   } catch (error) {
-    console.error('فشل في عرض المكافأة:', error);
+    console.error("فشل عرض مكافأة القائد:", error);
   }
 }
 // انتهاء الإضافة
@@ -1606,6 +1600,145 @@ if (isLeader) {
   }, 60000); // كل دقيقة
 }
 // انتهاء الإضافة
+
+
+
+
+
+
+
+
+
+
+
+
+
+// أضف هذه الدالة في الأعلى مع بقية الدوال الرئيسية
+function createDateFilter() {
+  const filterType = document.querySelector('input[name="filterType"]:checked').value;
+  let filterFn = (sale) => true;
+  let startDate, endDate;
+
+  // الفلترة الافتراضية (شهر حالي)
+  if (!document.getElementById('filterDayInput').value &&
+      !document.getElementById('filterMonthInput').value &&
+      !document.getElementById('filterStartDate').value &&
+      !document.getElementById('filterEndDate').value) {
+    const today = new Date();
+    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  } else {
+    switch(filterType) {
+      case 'day':
+        const day = document.getElementById('filterDayInput').value;
+        if (day) {
+          startDate = new Date(day);
+          endDate = new Date(day);
+          endDate.setHours(23, 59, 59);
+        }
+        break;
+      
+      case 'month':
+        const month = document.getElementById('filterMonthInput').value;
+        if (month) {
+          const [year, m] = month.split('-');
+          startDate = new Date(year, m - 1, 1);
+          endDate = new Date(year, m, 0);
+        }
+        break;
+      
+      case 'period':
+        startDate = new Date(document.getElementById('filterStartDate').value);
+        endDate = new Date(document.getElementById('filterEndDate').value);
+        break;
+    }
+  }
+
+  if (startDate && endDate) {
+    endDate.setHours(23, 59, 59); // لتشمل اليوم كامل
+    filterFn = (sale) => {
+      const saleDate = new Date(sale.date);
+      return saleDate >= startDate && saleDate <= endDate;
+    };
+  }
+
+  return filterFn;
+}
+
+
+
+
+
+
+
+
+
+document.querySelector('.filter-section button').onclick = () => {
+  // تطبيق الفلترة على كلا القسمين
+  loadSalesData();
+  
+  if (isLeader) {
+    database.ref('employees')
+      .orderByChild('name')
+      .equalTo(employeeName)
+      .once('value')
+      .then(snapshot => {
+        snapshot.forEach(child => showLeaderBonus(child.key));
+      });
+  }
+  
+  // إظهار الفترة المحددة في قسم القيادة
+  const filterFn = createDateFilter();
+  const [start, end] = getFilterDates();
+  updateLeaderFilterDisplay(start, end);
+}
+
+// دالة مساعدة للحصول على التواريخ
+function getFilterDates() {
+  const filterType = document.querySelector('input[name="filterType"]:checked').value;
+  let start, end;
+  
+  switch(filterType) {
+    case 'day':
+      start = document.getElementById('filterDayInput').value;
+      end = start;
+      break;
+    case 'month':
+      start = document.getElementById('filterMonthInput').value;
+      end = start;
+      break;
+    case 'period':
+      start = document.getElementById('filterStartDate').value;
+      end = document.getElementById('filterEndDate').value;
+      break;
+    default:
+      const today = new Date();
+      start = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2,'0')}`;
+      end = start;
+  }
+  
+  return [start, end];
+}
+
+// دالة تحديث عرض الفلترة في قسم القيادة
+function updateLeaderFilterDisplay(start, end) {
+  const displayElement = document.getElementById('leaderFilterDisplay');
+  
+  if (!displayElement) {
+    const newDisplay = document.createElement('div');
+    newDisplay.id = 'leaderFilterDisplay';
+    newDisplay.style.margin = '10px 0';
+    newDisplay.style.fontWeight = 'bold';
+    newDisplay.style.color = '#8e44ad';
+    document.getElementById('leaderBonus').prepend(newDisplay);
+  }
+  
+  const displayText = start === end 
+    ? `الفترة المحددة: ${start}`
+    : `الفترة المحددة: من ${start} إلى ${end}`;
+  
+  document.getElementById('leaderFilterDisplay').textContent = displayText;
+}
 
 
 
