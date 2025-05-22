@@ -34,14 +34,149 @@
       justify-content: center;
       z-index: 1000;
     }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 600px;
-      width: 90%;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
+
+
+
+/* تنسيقات خاصة بنافذة القائد */
+.leader-info {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.add-member-section {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.team-select {
+  flex: 1;
+  max-width: 300px;
+}
+.team-select {
+  border: 2px solid #bdc3c7;
+  transition: all 0.3s;
+  font-size: 16px;
+  background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233498db'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") no-repeat right 10px center/15px;
+  appearance: none;
+}
+
+.team-select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+}
+
+.team-members {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+
+
+
+  .modal-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+  transform: translateY(-50px);
+  opacity: 0;
+  animation: modalEntrance 0.4s ease-out forwards;
+  position: relative;
+}
+
+@keyframes modalEntrance {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+
+
+
+
+.modal-content h2 {
+  color: #2c3e50;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 3px solid #3498db;
+  font-size: 1.8em;
+}
+
+.leader-info {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+}
+
+.add-member-section {
+  background: #fff;
+  border: 2px dashed #bdc3c7;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+  transition: border-color 0.3s;
+}
+
+.add-member-section:hover {
+  border-color: #3498db;
+}
+
+.team-member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  margin: 10px 0;
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+
+.team-member-item:hover {
+  transform: translateX(5px);
+}
+
+
+
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 28px;
+  color: #e74c3c;
+  transition: all 0.3s;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.modal-close:hover {
+  color: #c0392b;
+  transform: rotate(90deg);
+  background: rgba(231, 76, 60, 0.1);
+}
+
+
+
+
+
     
     :root {
       --primary-color: #2c3e50;
@@ -184,6 +319,59 @@ input[type="file"] {
     }
     .delete-btn:hover { background: #c0392b; }
     .edit-btn:hover { background: #219a52; }
+/* Leader switch styles */
+.leader-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  margin: 5px;
+}
+
+.leader-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Add some spacing for actions */
+.employee-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
     .alert {
       padding: 15px;
       margin: 15px 0;
@@ -216,6 +404,30 @@ input[type="file"] {
       align-items: center;
     }
     .employee-card:hover { transform: translateY(-5px); }
+/* تنسيقات بطاقات القادة */
+.employee-card[data-leader="true"] {
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.3);
+  border: 2px solid #2196F3;
+  position: relative;
+}
+
+.employee-card[data-leader="true"]::after {
+  content: "قائد الفريق";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #2196F3;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.employee-card[data-leader="true"] .employee-name {
+  color: #2196F3;
+  font-weight: 700;
+}
     .employee-photo {
       width: 100px;
       height: 100px;
@@ -347,6 +559,17 @@ input[type="file"] {
     flex: 1 1 100%;
     max-width: 100%;
   }
+.order-status-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.status-processing { background: #f39c12; }
+.status-delivery { background: #3498db; }
+.status-completed { background: #2ecc71; }
 }
 
 
@@ -420,6 +643,9 @@ input[type="file"] {
   </select>
   <input type="number" id="targetPointsInput" placeholder="عدد النقاط" min="0">
   <button onclick="updateEmployeeTarget()">تحديث النقاط</button>
+<div id="currentPoints" style="margin:10px 0; padding:10px; background:#f8f9fa; border-radius:6px; display:none;">
+  النقاط الحالية: <span id="pointsValue">0</span>
+</div>
   <div id="targetAlert" class="alert"></div>
 </div>
 
@@ -747,6 +973,43 @@ input[type="file"] {
 
   </div>
 
+
+
+
+
+<!-- Leader Modal -->
+<div id="leaderModal" class="modal" onclick="closeLeaderModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <span class="modal-close" onclick="closeLeaderModal(event)">&times;</span>
+    <h2 style="color: #2196F3;">تفاصيل القائد</h2>
+    <div id="leaderModalContent">
+  <div class="leader-info">
+    <p><strong>اسم القائد:</strong> <span id="leaderName"></span></p>
+    <p><strong>عدد الأعضاء:</strong> <span id="teamCount">0</span></p>
+  </div>
+
+  <div class="add-member-section">
+    <select id="employeeList" class="team-select">
+      <option value="" disabled selected>اختر موظف للإضافة</option>
+    </select>
+    <button class="add-btn" onclick="assignToTeam()">إضافة للفريق</button>
+  </div>
+
+  <div class="team-members" id="teamMembersList"></div>
+</div>
+      <p><strong>المهام القيادية:</strong></p>
+      <ul id="leaderTasks"></ul>
+      <button class="edit-btn" onclick="assignLeadershipTasks()">تعيين مهام</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
   <!-- Employee Modal for Detailed Data -->
   <div id="employeeModal" class="modal" onclick="closeEmployeeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
@@ -833,12 +1096,19 @@ filterEnd  .addEventListener('change', applySalesFilter);
       for (const key in employeesData) {
         const emp = employeesData[key];
         window.employeeMap[emp.username] = emp;
-        cardsHTML += `
-          <div class="employee-card" onclick="showEmployeeModal('${emp.name}')">
+      cardsHTML += `
+  <div class="employee-card" 
+       onclick="${emp.leader ? 'showLeaderModal(\'' + key + '\')' : 'showEmployeeModal(\'' + emp.name + '\')'}"
+       data-leader="${emp.leader}">
             <img id="employee-photo-${key}" class="employee-photo" src="https://via.placeholder.com/200x150" alt="${emp.name}">
             <div class="employee-name">${emp.name}</div>
             <div class="employee-type">${emp.type.charAt(0).toUpperCase() + emp.type.slice(1)}</div>
             <div class="employee-actions">
+      <label class="leader-switch">
+        <input type="checkbox" ${emp.leader ? 'checked' : ''} 
+               onchange="toggleLeader('${key}', this.checked)">
+        <span class="slider"></span>
+      </label>
               <button class="edit-btn" onclick="event.stopPropagation(); editEmployee('${key}')">Edit</button>
               <button class="delete-btn" onclick="event.stopPropagation(); deleteRecord('employees', '${key}')">Delete</button>
             </div>
@@ -952,6 +1222,7 @@ document.getElementById('targetEmployeeSelect').appendChild(optionTarget);
       }
       try {
         let empData = { name, phone, type };
+ 
         if (editingEmployeeKey) {
           await database.ref(`employees/${editingEmployeeKey}`).update(empData);
           showAlert('success', 'Employee updated successfully!', 'empAlert');
@@ -1542,6 +1813,153 @@ database.ref('sales').on('value', snapshot => {
     function closeEmployeeModal(event) { 
       document.getElementById('employeeModal').style.display = 'none'; 
     }
+
+
+
+
+
+function closeLeaderModal(event) {
+  document.getElementById('leaderModal').style.display = 'none';
+}
+
+
+
+
+
+
+function showLeaderModal(leaderKey) {
+  const leader = window.employeesData[leaderKey];
+  if (!leader) return;
+
+  // تحديث المعلومات الأساسية
+  document.getElementById('leaderName').textContent = leader.name;
+document.getElementById('leaderName').dataset.key = leaderKey; // أضف هذا السطر
+
+  document.getElementById('teamCount').textContent = leader.team?.length || 0;
+
+  // تعبئة القائمة المنسدلة
+  const employeeList = document.getElementById('employeeList');
+  employeeList.innerHTML = '<option value="" disabled selected>اختر موظف للإضافة</option>';
+  
+  Object.keys(window.employeesData).forEach(key => {
+    const emp = window.employeesData[key];
+    if (key !== leaderKey && !leader.team?.includes(key)) {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = emp.name;
+      employeeList.appendChild(option);
+    }
+  });
+
+  // عرض أعضاء الفريق الحاليين
+  const teamList = document.getElementById('teamMembersList');
+  teamList.innerHTML = '';
+  if (leader.team) {
+    leader.team.forEach(memberKey => {
+      const member = window.employeesData[memberKey];
+      if (member) {
+        const div = document.createElement('div');
+        div.className = 'team-member-item';
+        div.innerHTML = `
+          <span>${member.name}</span>
+          <button class="delete-btn" onclick="removeFromTeam('${leaderKey}', '${memberKey}')">إزالة</button>
+        `;
+        teamList.appendChild(div);
+      }
+    });
+  }
+
+  document.getElementById('leaderModal').style.display = 'flex';
+}
+
+
+
+
+
+
+
+
+
+
+async function assignToTeam() {
+  const leaderKey = document.getElementById('leaderName').dataset.key;
+  const memberKey = document.getElementById('employeeList').value;
+  
+  if (!leaderKey || !memberKey) return;
+
+  try {
+    const leaderRef = database.ref(`employees/${leaderKey}`);
+    const snapshot = await leaderRef.once('value');
+    const leaderData = snapshot.val() || {};
+    
+    const updatedTeam = [...(leaderData.team || []), memberKey];
+    
+    await leaderRef.update({ team: updatedTeam });
+    
+    // تحديث الواجهة مباشرة دون إعادة تحميل
+    const teamCount = document.getElementById('teamCount');
+    teamCount.textContent = updatedTeam.length;
+    
+    // إضافة العضو الجديد للقائمة
+    const member = window.employeesData[memberKey];
+    const teamList = document.getElementById('teamMembersList');
+    const div = document.createElement('div');
+    div.className = 'team-member-item';
+    div.innerHTML = `
+      <span>${member.name}</span>
+      <button class="delete-btn" onclick="removeFromTeam('${leaderKey}', '${memberKey}')">إزالة</button>
+    `;
+    teamList.appendChild(div);
+    
+    // إزالة الخيار من القائمة المنسدلة
+    const option = document.querySelector(`#employeeList option[value="${memberKey}"]`);
+    if (option) option.remove();
+    
+  } catch (error) {
+    alert('حدث خطأ أثناء الإضافة: ' + error.message);
+  }
+}
+
+async function removeFromTeam(leaderKey, memberKey) {
+  if (!confirm('هل تريد إزالة هذا العضو من الفريق؟')) return;
+  
+  try {
+    const leaderRef = database.ref(`employees/${leaderKey}`);
+    const snapshot = await leaderRef.once('value');
+    const leaderData = snapshot.val() || {};
+    
+    const updatedTeam = leaderData.team?.filter(key => key !== memberKey) || [];
+    
+    await leaderRef.update({ team: updatedTeam });
+    
+    // تحديث الواجهة مباشرة
+    document.querySelector(`button[onclick="removeFromTeam('${leaderKey}', '${memberKey}')"]`)
+      .parentElement.remove();
+    
+    document.getElementById('teamCount').textContent = updatedTeam.length;
+    
+    // إعادة العضو للقائمة المنسدلة
+    const member = window.employeesData[memberKey];
+    const employeeList = document.getElementById('employeeList');
+    const option = document.createElement('option');
+    option.value = memberKey;
+    option.textContent = member.name;
+    employeeList.appendChild(option);
+    
+  } catch (error) {
+    alert('حدث خطأ أثناء الإزالة: ' + error.message);
+  }
+}
+
+
+
+
+
+
+
+
+
+
     function handleCreateEmployeeAccount(event) {
       event.preventDefault();
       const employeeNameAcc = document.getElementById('accountEmployeeSelect').value;
@@ -1923,6 +2341,23 @@ function updateEmployeeTarget() {
     }
   });
 }
+document.getElementById('targetEmployeeSelect').addEventListener('change', async function() {
+  const name = this.value;
+  const emp = await findEmployeeByName(name);
+  
+  if(emp) {
+    document.getElementById('currentPoints').style.display = 'block';
+    document.getElementById('pointsValue').textContent = emp.target || 0;
+  } else {
+    document.getElementById('currentPoints').style.display = 'none';
+  }
+});
+
+async function findEmployeeByName(name) {
+  const snapshot = await database.ref('employees').once('value');
+  const employees = snapshot.val() || {};
+  return Object.values(employees).find(e => e.name === name);
+}
 
     function closeProductModal(event) {
       document.getElementById('productModal').style.display = 'none';
@@ -2232,6 +2667,43 @@ document.getElementById('addProductBtn')
 
 // إنشاء حقل منتج واحد تلقائياً عند تحميل الصفحة
 addProductField();
+
+
+
+
+
+
+
+
+
+
+async function toggleLeader(employeeKey, isLeader) {
+  try {
+    await database.ref(`employees/${employeeKey}`).update({ leader: isLeader });
+    const switchElement = document.querySelector(`input[onchange*="${employeeKey}"]`);
+    if (isLeader) {
+      switchElement.parentElement.classList.add('active-leader');
+    } else {
+      switchElement.parentElement.classList.remove('active-leader');
+    }
+  } catch (error) {
+    console.error("Error updating leader status:", error);
+    alert('حدث خطأ أثناء تحديث حالة القيادة');
+    // Reset switch state on error
+    const switchElement = document.querySelector(`input[onchange*="${employeeKey}"]`);
+    switchElement.checked = !isLeader;
+  }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
