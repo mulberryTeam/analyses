@@ -577,6 +577,60 @@ input:checked + .slider:before {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+profit-boxes {
+  display: flex;
+  gap: 20px;
+  margin: 20px 0;
+}
+
+.profit-box {
+  flex: 1;
+  padding: 15px;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+}
+
+.lazur-profit { background: #3498db; }
+.external-profit { background: #2ecc71; }
+
+.profit-box h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
+}
+
+.profit-box p {
+  margin: 0;
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -699,6 +753,17 @@ input:checked + .slider:before {
       </div>
 
       <h2>Sales Records</h2>
+<!-- إضافة مربعي الإحصائيات -->
+<div class="profit-boxes">
+  <div class="profit-box lazur-profit">
+    <h3>أرباح الازاري</h3>
+    <p id="lazurTotal">₪0.00</p>
+  </div>
+  <div class="profit-box external-profit">
+    <h3>أرباح الخارجي</h3>
+    <p id="externalTotal">₪0.00</p>
+  </div>
+</div>
 
 <!-- ✨ فلترة المبيعات -->
 <div class="form-section" style="background: #eef6fd; box-shadow: none; margin-bottom: 10px;">
@@ -2434,6 +2499,21 @@ function applySalesFilter() {
       </td>
     </tr>
   `).join('');
+// حساب الإجماليات بعد التصفية
+let lazurTotal = 0;
+let externalTotal = 0;
+
+filtered.forEach(sale => {
+  const profit = parseFloat(sale.salePrice) - parseFloat(sale.originalPrice);
+  if (sale.productSource === 'lazur') {
+    lazurTotal += profit;
+  } else {
+    externalTotal += profit;
+  }
+});
+
+document.getElementById('lazurTotal').textContent = `₪${lazurTotal.toFixed(2)}`;
+document.getElementById('externalTotal').textContent = `₪${externalTotal.toFixed(2)}`;
 }
 // ————————————————————————
 
