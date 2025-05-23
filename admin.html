@@ -635,17 +635,30 @@ input:checked + .slider:before {
       <div id="employeeCards" class="employee-cards"></div>
     </div>
 
+<!-- في قسم تعديل نقاط الموظف -->
 <div class="form-section">
-  <h2>تعديل نقاط الموظف</h2>
+  <h2>إدارة نقاط الموظف</h2>
+  <div style="margin-bottom: 15px;">
+    <label>طريقة التحديث:</label>
+    <label>
+      <input type="radio" name="pointsMode" value="set" checked> تعيين النقاط
+    </label>
+    <label>
+      <input type="radio" name="pointsMode" value="add"> إضافة نقاط
+    </label>
+  </div>
+  
   <label for="targetEmployeeSelect">اختر الموظف:</label>
   <select id="targetEmployeeSelect">
     <option value="" disabled selected>اختر الموظف</option>
   </select>
+  
   <input type="number" id="targetPointsInput" placeholder="عدد النقاط" min="0">
   <button onclick="updateEmployeeTarget()">تحديث النقاط</button>
-<div id="currentPoints" style="margin:10px 0; padding:10px; background:#f8f9fa; border-radius:6px; display:none;">
-  النقاط الحالية: <span id="pointsValue">0</span>
-</div>
+  
+  <div id="currentPoints" style="margin:10px 0; padding:10px; background:#f8f9fa; border-radius:6px;">
+    النقاط الحالية: <span id="pointsValue">0</span>
+  </div>
   <div id="targetAlert" class="alert"></div>
 </div>
 
@@ -657,6 +670,15 @@ input:checked + .slider:before {
         <form onsubmit="handleSaleSubmit(event)">
           <input type="hidden" id="saleKey">
           <input type="text" id="saleItem" placeholder="Product Name" required>
+<!-- أضف هذا الكود هنا -->
+<div style="margin: 10px 0;">
+  <label>مصدر المنتج:</label>
+  <select id="productSource" required>
+    <option value="" disabled selected>اختر مصدر المنتج</option>
+    <option value="lazur">ازاري</option>
+    <option value="external">موقع خارجي</option>
+  </select>
+</div>
           <input type="number" id="originalPrice" placeholder="Original Price (₪)" min="0" step="0.01" required>
           <input type="number" id="salePrice" placeholder="Sale Price (₪)" min="0" step="0.01" required>
 <label for="saleDate">التاريخ:</label>
@@ -698,6 +720,7 @@ input:checked + .slider:before {
     <thead>
       <tr>
         <th>Product</th>
+        <th>المصدر</th> <!-- العمود المضاف -->
         <th>Original Price (₪)</th>
         <th>Sale Price (₪)</th>
         <th>Seller</th>
@@ -1315,6 +1338,7 @@ const saleDateISO = dateInput
       try {
         const saleDataObj = {
           productName: item,
+ productSource: document.getElementById('productSource').value, // هذا السطر المضاف
           originalPrice: originalPrice.toFixed(2),
           salePrice: salePrice.toFixed(2),
           seller: sellerType === 'employee' ? employeeNameSale : 'Store',
@@ -2320,39 +2344,48 @@ async function removeFromTeam(leaderKey, memberKey) {
       });
     }
 
-function updateEmployeeTarget() {
+// تعديل دالة التحديث
+async function updateEmployeeTarget() {
   const name = document.getElementById('targetEmployeeSelect').value;
   const points = parseInt(document.getElementById('targetPointsInput').value);
+  const mode = document.querySelector('input[name="pointsMode"]:checked').value;
+
   if (!name || isNaN(points)) {
     showAlert('error', 'يرجى تحديد الموظف وإدخال عدد النقاط!', 'targetAlert');
     return;
   }
 
-  // البحث عن مفتاح الموظف
-  database.ref('employees').once('value').then(snapshot => {
-    const data = snapshot.val() || {};
-    for (const key in data) {
-      if (data[key].name === name) {
-        database.ref(`employees/${key}`).update({ target: points })
-          .then(() => showAlert('success', 'تم تحديث النقاط بنجاح!', 'targetAlert'))
-          .catch(err => showAlert('error', 'حدث خطأ: ' + err.message, 'targetAlert'));
+  try {
+    const snapshot = await database.ref('employees').once('value');
+    const employees = snapshot.val() || {};
+    
+    for (const key in employees) {
+      if (employees[key].name === name) {
+        const ref = database.ref(`employees/${key}`);
+        const currentPoints = Number(employees[key].target) || 0; // التأكد من تحويل القيمة إلى رقم
+        
+        let newPoints = currentPoints; // البدء من القيمة الحالية
+        if (mode === 'add') {
+          newPoints += points; // إضافة النقاط الجديدة
+        } else {
+          newPoints = points; // تعيين القيمة الجديدة
+        }
+
+        await ref.update({ target: newPoints });
+        
+        // تحديث العرض مباشرة
+        document.getElementById('pointsValue').textContent = newPoints;
+        showAlert('success', `تم ${mode === 'add' ? 'إضافة' : 'تحديث'} النقاط بنجاح! النقاط الجديدة: ${newPoints}`, 'targetAlert');
         break;
       }
     }
-  });
-}
-document.getElementById('targetEmployeeSelect').addEventListener('change', async function() {
-  const name = this.value;
-  const emp = await findEmployeeByName(name);
-  
-  if(emp) {
-    document.getElementById('currentPoints').style.display = 'block';
-    document.getElementById('pointsValue').textContent = emp.target || 0;
-  } else {
-    document.getElementById('currentPoints').style.display = 'none';
+    document.getElementById('targetPointsInput').value = '';
+  } catch (err) {
+    showAlert('error', 'حدث خطأ: ' + err.message, 'targetAlert');
   }
-});
+}
 
+// دالة مساعدة للبحث عن الموظف
 async function findEmployeeByName(name) {
   const snapshot = await database.ref('employees').once('value');
   const employees = snapshot.val() || {};
@@ -2390,6 +2423,7 @@ function applySalesFilter() {
   tbody.innerHTML = filtered.map(s => `
     <tr>
       <td>${s.productName}</td>
+      <td>${s.productSource === 'lazur' ? 'ازاري' : 'موقع خارجي'}</td> <!-- الخلية الجديدة -->
       <td>₪${s.originalPrice}</td>
       <td>₪${s.salePrice}</td>
       <td>${s.seller}</td>
