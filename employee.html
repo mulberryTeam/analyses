@@ -780,6 +780,17 @@ body.leader-theme .header-logo {
         <button onclick="loadSalesData()">تطبيق التصفية</button>
       </div>
       <h2 id="salesHeader">بيانات المبيعات والأرباح الخاصة بك</h2>
+
+
+
+<button id="calculatePointsBtn" onclick="calculatePoints()" style="margin-left:10px; padding:5px 10px; background:#2980b9; color:#fff; border:none; border-radius:5px;">
+  احتساب النقاط
+</button>
+
+
+
+
+
 <h3 id="employeeTargetDisplay" style="color:#27ae60; margin-bottom: 15px;"></h3>
 
       <div id="salesData" class="sales-card">
@@ -1772,6 +1783,27 @@ function updateLeaderFilterDisplay(start, end) {
 }
 
 
+
+
+
+
+
+
+
+// دالة احتساب النقاط وتحويلها إلى شيكل
+function calculatePoints() {
+  // جلب عدد النقاط الحالي من العنصر
+  const displayText = document.getElementById('employeeTargetDisplay').textContent;
+  // استخراج الرقم من النص (عدد النقاط)
+  const points = parseInt(displayText.replace(/\D/g, ''), 10) || 0;
+  // حساب المبلغ بالشيكل
+  const shekels = (points / 90).toFixed(2);
+  // عرض الناتج في نافذة منبثقة
+  alert(`قيمة النقاط بالشيكل: ₪${shekels}`);
+}
+
+// ربط الزر مع الدالة بعد تحميل الصفحة
+document.getElementById('calculatePointsBtn').addEventListener('click', calculatePoints);
 
 
 
