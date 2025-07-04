@@ -123,7 +123,7 @@
     <!-- زر الترجمة -->
     <button id="translateBtn">English</button>
     <!-- صورة شعار الموقع -->
-    <img class="login-logo" src="https://i.ibb.co/DfgPK26x/d3faeae71c55.jpg" alt="شعار تسجيل الدخول">
+    <img class="login-logo" src="https://i.ibb.co/jB8RyGn/11zon-cropped.png" alt="شعار تسجيل الدخول">
     <!-- العبارة بخط عربي مميز وتدرج لوني -->
     <p class="company-info">نظام حسابات Mulberry Company في فلسطين</p>
     <h2>تسجيل الدخول</h2>
@@ -250,12 +250,17 @@ database.ref('adminAccounts').orderByChild('username').equalTo(username).once('v
           valid = true;
         }
       });
-      if(valid) {
-        localStorage.setItem('userRole', 'employee');
-        localStorage.setItem('employeeName', employeeData.name);
-        localStorage.setItem('employeeUsername', employeeData.username);
-        window.location.href = "employee.html";
-      } else {
+     if(valid) {
+  snapshot.forEach(childSnapshot => {
+    const empKey = childSnapshot.key; // مفتاح الحساب
+    localStorage.setItem('employeeKey', empKey);
+  });
+  localStorage.setItem('userRole', 'employee');
+  localStorage.setItem('employeeName', employeeData.name);
+  localStorage.setItem('employeeUsername', employeeData.username);
+  window.location.href = "employee.html";
+}
+ else {
         loginAlert.textContent = translations[currentLang].invalidEmployeePassword;
       }
     } else {
@@ -282,12 +287,17 @@ database.ref('adminAccounts').orderByChild('username').equalTo(username).once('v
               valid = true;
             }
           });
-          if(valid) {
-            localStorage.setItem('userRole', 'employee');
-            localStorage.setItem('employeeName', employeeData.name);
-            localStorage.setItem('employeeUsername', employeeData.username);
-            window.location.href = "employee.html";
-          } else {
+         if(valid) {
+  snapshot.forEach(childSnapshot => {
+    const empKey = childSnapshot.key; // مفتاح الحساب
+    localStorage.setItem('employeeKey', empKey);
+  });
+  localStorage.setItem('userRole', 'employee');
+  localStorage.setItem('employeeName', employeeData.name);
+  localStorage.setItem('employeeUsername', employeeData.username);
+  window.location.href = "employee.html";
+}
+ else {
             loginAlert.textContent = translations[currentLang].invalidEmployeePassword;
           }
         } else {
