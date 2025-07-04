@@ -624,6 +624,45 @@ profit-boxes {
 
 
 
+/* تنسيق سويتش للموقع تحت الصيانة */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+  vertical-align: middle;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+.switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+/* حالة التفعيل */
+.switch input:checked + .slider {
+  background-color: #2196F3;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(26px);
+}
 
 
 
@@ -975,6 +1014,28 @@ profit-boxes {
 
     <!-- Categories & Products Tab (ادارة الانتاج) -->
     <div id="categoriesProducts" class="tab-content" style="display: none;">
+
+
+
+
+
+  <!-- Site Maintenance Switch -->
+<div class="form-section" style="margin-bottom: 20px;">
+  <label class="switch">
+    <input type="checkbox" id="siteMaintenanceSwitch" onchange="toggleMaintenanceMode(this)" />
+    <span class="slider"></span>
+  </label>
+  <span style="margin-left:10px; font-weight:500;">الموقع تحت الصيانة</span>
+</div>
+
+
+
+
+
+
+
+
+
       <!-- Categories Management -->
       <div class="form-section">
         <h2>إضافة/تعديل فئة</h2>
@@ -2808,6 +2869,39 @@ async function toggleLeader(employeeKey, isLeader) {
     switchElement.checked = !isLeader;
   }
 }
+
+
+
+
+
+
+
+
+
+
+// ضبط وضع الصيانة في قاعدة البيانات عند تبديل السويتش
+function toggleMaintenanceMode(checkbox) {
+  database.ref('siteMaintenance').set({ maintenance: checkbox.checked })
+    .then(() => {
+      alert(checkbox.checked 
+        ? 'تم تفعيل وضع الصيانة؛ الموقع الآن تحت الصيانة.' 
+        : 'تم إيقاف وضع الصيانة؛ الموقع عاد للعمل.');
+    })
+    .catch(error => {
+      console.error('Error updating maintenance mode:', error);
+      alert('حدث خطأ أثناء تحديث وضع الصيانة: ' + error.message);
+    });
+}
+
+// عند تحميل الصفحة، اقرأ الحالة الموجودة وأدخلها في السويتش تلقائياً
+database.ref('siteMaintenance/maintenance').once('value').then(snap => {
+  const val = snap.val();
+  if (typeof val === 'boolean') {
+    document.getElementById('siteMaintenanceSwitch').checked = val;
+  }
+});
+
+
 
 
 
