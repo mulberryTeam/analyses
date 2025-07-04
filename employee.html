@@ -1062,11 +1062,42 @@ body.leader-theme .header-logo {
     // استرجاع اسم الموظف المخزن في localStorage
     let employeeName = localStorage.getItem('employeeName');
 
+
+
+const empKey = localStorage.getItem('employeeKey');
+
+// فحص وجود الحساب كل 3 ثواني بشكل آمن
+if (empKey) {
+  setInterval(() => {
+    database.ref('employeeAccounts/' + empKey).once('value')
+      .then(snapshot => {
+        if (!snapshot.exists()) {
+          logout(); // تم حذف الحساب => تسجيل خروج
+        }
+      })
+      .catch(error => {
+        console.error("خطأ في الفحص التلقائي:", error);
+      });
+  }, 3000);
+}
+
+
+
+
+
     if (!employeeName) {
       alert("لم يتم العثور على جلسة الموظف. الرجاء تسجيل الدخول مرة أخرى.");
       window.location.href = "index.html";
     }
+
+
+
+
+
     document.getElementById('employeeNameDisplay').textContent = translations[currentLanguage].welcome + employeeName;
+
+
+
 
 
 
