@@ -1042,6 +1042,10 @@ profit-boxes {
         <form id="categoryForm" onsubmit="handleCategorySubmit(event)">
           <input type="hidden" id="catKey">
           <input type="text" id="catName" placeholder="اسم الفئة" required>
+
+<input type="text" id="catImageUrl" placeholder="رابط صورة الفئة" required>
+
+
           <button type="submit" id="categorySubmitBtn">إضافة الفئة</button>
           <button type="button" onclick="cancelCategoryEdit()" style="display: none;" id="cancelCategoryBtn">إلغاء</button>
         </form>
@@ -2295,7 +2299,28 @@ async function removeFromTeam(leaderKey, memberKey) {
         showAlert('error', 'يرجى إدخال اسم الفئة!', 'categoryAlert');
         return;
       }
-      const catData = { name: catName };
+
+
+
+// 1) جيب رابط صورة الفئة وتأكد إنه مدخل
+const catImageUrl = document.getElementById('catImageUrl').value.trim();
+if (!catImageUrl) {
+  showAlert('error', 'يرجى إدخال رابط صورة الفئة!', 'categoryAlert');
+  return;
+}
+
+
+
+
+
+const catData = {
+  name:     catName,
+  imageUrl: catImageUrl    // اضفنا خاصية imageUrl
+};
+
+
+
+
       if (editingCategoryKey) {
         database.ref(`categories/${editingCategoryKey}`).update(catData)
           .then(() => { 
@@ -2308,6 +2333,13 @@ async function removeFromTeam(leaderKey, memberKey) {
           .then(() => { 
             showAlert('success', 'تم إضافة الفئة بنجاح!', 'categoryAlert'); 
             document.getElementById('catName').value = ''; 
+
+
+document.getElementById('catImageUrl').value = '';
+
+
+
+
           })
           .catch(error => { showAlert('error', `خطأ: ${error.message}`, 'categoryAlert'); });
       }
