@@ -704,6 +704,21 @@ profit-boxes {
   </style>
 </head>
 <body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <div class="header">
     <div class="header-left">
       <!-- تم استبدال صورة الشعار بالصورة الجديدة -->
@@ -1050,6 +1065,25 @@ profit-boxes {
 
 
 
+
+
+<!-- Ad Banners Management -->
+<div class="form-section">
+  <h2>إدارة الواجهات الإعلانية</h2>
+  <input type="text" id="adBannerUrl" placeholder="أدخل رابط الصورة الإعلانية" style="width: 100%; padding: 8px;">
+  <button onclick="addAdBanner()" style="margin-top: 8px;">إضافة</button>
+  <div id="adBannerAlert" class="alert" style="margin-top: 10px;"></div>
+  <div id="adBannersContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;"></div>
+</div>
+
+
+
+
+
+
+
+
+
   <!-- Site Maintenance Switch -->
 <div class="form-section" style="margin-bottom: 20px;">
   <label class="switch">
@@ -1128,6 +1162,23 @@ profit-boxes {
       <h2>قائمة المنتجات</h2>
       <div id="productCards" class="product-cards"></div>
     </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- Orders Management Tab (ادارة الطلبيات) -->
 <div id="ordersManagement" class="tab-content" style="display: none;">
@@ -2570,6 +2621,69 @@ if (selectedSource === "url") {
       if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
       database.ref(`products/${key}`).remove();
     }
+
+
+
+
+
+
+// التعامل مع الواجهات الإعلانية
+function addAdBanner() {
+  const url = document.getElementById('adBannerUrl').value.trim();
+  if (!url.startsWith('http')) {
+    showAlert('error', 'يرجى إدخال رابط صحيح يبدأ بـ http', 'adBannerAlert');
+    return;
+  }
+  database.ref('adBanners').push({ imageUrl: url })
+    .then(() => {
+      showAlert('success', 'تمت إضافة الصورة الإعلانية بنجاح', 'adBannerAlert');
+      document.getElementById('adBannerUrl').value = '';
+    })
+    .catch(error => {
+      showAlert('error', `فشل في الإضافة: ${error.message}`, 'adBannerAlert');
+    });
+}
+
+function loadAdBanners() {
+  database.ref('adBanners').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    const container = document.getElementById('adBannersContainer');
+    container.innerHTML = '';
+    for (const key in data) {
+      const banner = data[key];
+      const div = document.createElement('div');
+      div.style.position = 'relative';
+      div.innerHTML = `
+        <img src="${banner.imageUrl}" style="width:150px; height:auto; border:1px solid #ccc; border-radius:8px;">
+        <button onclick="deleteAdBanner('${key}')" style="
+          position: absolute;
+          top: 0;
+          right: 0;
+          background: red;
+          color: white;
+          border: none;
+          padding: 4px 8px;
+          cursor: pointer;
+          border-radius: 0 8px 0 8px;
+        ">×</button>
+      `;
+      container.appendChild(div);
+    }
+  });
+}
+
+function deleteAdBanner(key) {
+  if (confirm("هل أنت متأكد من حذف هذه الصورة؟")) {
+    database.ref('adBanners/' + key).remove();
+  }
+}
+
+
+
+
+
+
+
     // تحديث قائمة المنتجات وعرضها كبطاقات (يقرأ من عقدة "products")
     database.ref('products').on('value', snapshot => {
       const productsData = snapshot.val() || {};
@@ -3057,6 +3171,25 @@ addProductField();
 
 
 
+loadAdBanners();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 async function toggleLeader(employeeKey, isLeader) {
@@ -3162,6 +3295,25 @@ function toggleImageSource() {
     fileInput.required = false;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
