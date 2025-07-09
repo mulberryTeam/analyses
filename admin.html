@@ -670,6 +670,37 @@ profit-boxes {
 
 
 
+
+
+
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: none; justify-content: center; align-items: center;
+  z-index: 999;
+}
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%; max-width: 400px;
+  text-align: center;
+}
+.close {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+
+
+
+
+
+
   </style>
 </head>
 <body>
@@ -1062,6 +1093,29 @@ profit-boxes {
           <input type="number" id="productPrice" placeholder="السعر" min="0" step="0.01" required>
           <!-- تغيير حقل صورة المنتج ليكون من نوع file -->
           <input type="file" id="productImage" accept="image/*" required>
+
+
+
+
+<!-- خيار اختيار طريقة الصورة -->
+<div style="margin-top: 10px;">
+  <label>
+    <input type="radio" name="imageSource" value="upload" checked onchange="toggleImageSource()"> رفع صورة
+  </label>
+  <label style="margin-right: 15px;">
+    <input type="radio" name="imageSource" value="url" onchange="toggleImageSource()"> رابط صورة
+  </label>
+</div>
+
+<!-- مربع نص رابط الصورة -->
+<div id="imageURLInputContainer" style="display: none; margin-top: 10px;">
+  <input type="text" id="imageURLInput" placeholder="أدخل رابط الصورة" style="width: 100%; padding: 8px;">
+</div>
+
+
+
+
+
           <textarea id="productDescription" placeholder="وصف المنتج" required></textarea>
           <select id="productCategorySelect" required>
             <option value="" disabled selected>اختر الفئة</option>
@@ -1186,6 +1240,36 @@ profit-boxes {
       <div id="productModalContent"></div>
     </div>
   </div>
+
+
+
+
+
+
+
+<!-- نافذة تعديل جزئي -->
+<div id="partialEditModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span class="close" onclick="closePartialEditModal()">&times;</span>
+    <h3>اختر ما الذي تريد تعديله</h3>
+    <select id="editFieldSelect" onchange="showEditFieldInput()">
+      <option value="">-- اختر الحقل --</option>
+      <option value="name">اسم المنتج</option>
+      <option value="image">رابط الصورة</option>
+      <option value="description">الوصف</option>
+      <option value="price">السعر</option>
+    </select>
+    <div id="editFieldInput" style="margin-top: 10px; display: none;">
+      <input type="text" id="newValueInput" placeholder="أدخل القيمة الجديدة">
+      <button onclick="submitPartialEdit()">حفظ</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
 
   <script>
     // Firebase Configuration
@@ -2390,33 +2474,52 @@ document.getElementById('catImageUrl').value = '';
       const fileInput = document.getElementById('productImage');
       const description = document.getElementById('productDescription').value.trim();
       const category = document.getElementById('productCategorySelect').value;
-      // عند الإضافة يكون اختيار الصورة إلزامي، أما عند التعديل فيمكن الاحتفاظ بالصورة القديمة إذا لم يتم اختيار صورة جديدة
-      if (!name || isNaN(price) || (!editingProductKey && fileInput.files.length === 0) || !description || !category) {
-        showAlert('error', 'يرجى ملء جميع الحقول بشكل صحيح!', 'productAlert');
-        return;
-      }
+
+
+
+
+
+
+
+
+
+     // —— تحقق من الحقول النصية (الاسم، السعر، الوصف، التصنيف) ——
+if (!name || isNaN(price) || !description || !category) {
+  showAlert('error', 'يرجى ملء جميع الحقول (الاسم، السعر، الوصف، التصنيف) بشكل صحيح!', 'productAlert');
+  return;
+}
+
       
-      let imageUrl = editingProductOldImage; // في حالة التعديل وعدم اختيار صورة جديدة
-      if(fileInput.files.length > 0) {
-        try {
-          const file = fileInput.files[0];
-          const base64Image = await convertToBase64(file);
-          const imgbbUrl = `https://api.imgbb.com/1/upload?key=d76282687ea27ed446e7883c853038c8`;
-          const formData = new FormData();
-          // إزالة البادئة ("data:image/xxx;base64,") قبل الإرسال
-          const base64String = base64Image.split(',')[1];
-          formData.append("image", base64String);
-          const response = await fetch(imgbbUrl, { method: "POST", body: formData });
-          const data = await response.json();
-          if (!data.success) {
-            throw new Error("فشل رفع الصورة إلى imgbb");
-          }
-          imageUrl = data.data.url;
-        } catch (error) {
-          showAlert('error', `خطأ في رفع الصورة: ${error.message}`, 'productAlert');
-          return;
-        }
-      }
+      let imageUrl = editingProductOldImage;
+const selectedSource = document.querySelector('input[name="imageSource"]:checked')?.value;
+
+if (selectedSource === "url") {
+  imageUrl = document.getElementById("imageURLInput").value.trim();
+  if (!imageUrl.startsWith("http")) {
+    showAlert("error", "يرجى إدخال رابط صورة صالح!", "productAlert");
+    return;
+  }
+} else if (fileInput.files.length > 0) {
+  try {
+    const file = fileInput.files[0];
+    const base64Image = await convertToBase64(file);
+    const imgbbUrl = `https://api.imgbb.com/1/upload?key=d76282687ea27ed446e7883c853038c8`;
+    const formData = new FormData();
+    const base64String = base64Image.split(",")[1];
+    formData.append("image", base64String);
+    const response = await fetch(imgbbUrl, { method: "POST", body: formData });
+    const data = await response.json();
+    if (!data.success) throw new Error("فشل رفع الصورة إلى imgbb");
+    imageUrl = data.data.url;
+  } catch (error) {
+    showAlert("error", `خطأ في رفع الصورة: ${error.message}`, "productAlert");
+    return;
+  }
+} else if (!editingProductKey) {
+  showAlert("error", "يرجى اختيار صورة أو إدخال رابط!", "productAlert");
+  return;
+}
+
       
       const productData = { name, price: price.toFixed(2), image: imageUrl, description, category };
       try {
@@ -2480,12 +2583,84 @@ document.getElementById('catImageUrl').value = '';
             <h4>${prod.name}</h4>
             <p>₪${prod.price}</p>
             <button class="edit-btn" onclick="event.stopPropagation(); editProduct('${key}')">تعديل</button>
+
+
+<button class="edit-btn" onclick="event.stopPropagation(); partialEditProduct('${key}')">تعديل جزئي</button>
+
+
+
             <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct('${key}')">حذف</button>
           </div>
         `;
       }
       productCardsDiv.innerHTML = cardsHTML;
     });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let currentEditKey = null;
+
+function partialEditProduct(key) {
+  currentEditKey = key;
+  document.getElementById("partialEditModal").style.display = "flex";
+  document.getElementById("editFieldSelect").value = "";
+  document.getElementById("editFieldInput").style.display = "none";
+  document.getElementById("newValueInput").value = "";
+}
+
+function closePartialEditModal() {
+  document.getElementById("partialEditModal").style.display = "none";
+}
+
+function showEditFieldInput() {
+  const field = document.getElementById("editFieldSelect").value;
+  if (field) {
+    document.getElementById("editFieldInput").style.display = "block";
+  } else {
+    document.getElementById("editFieldInput").style.display = "none";
+  }
+}
+
+function submitPartialEdit() {
+  const field = document.getElementById("editFieldSelect").value;
+  let value = document.getElementById("newValueInput").value;
+  if (!field || !value) return alert("يرجى تعبئة الحقول");
+
+  if (field === "price") value = parseFloat(value).toFixed(2);
+
+  const update = {};
+  update[field] = value;
+
+  database.ref(`products/${currentEditKey}`).update(update)
+    .then(() => {
+      showAlert('success', `تم تعديل ${field} بنجاح`, 'productAlert');
+      closePartialEditModal();
+    })
+    .catch((error) => {
+      showAlert('error', `حدث خطأ: ${error.message}`, 'productAlert');
+    });
+}
+
+
+
+
+
+
+
+
+
     function showProductModal(key) {
       database.ref(`products/${key}`).once('value').then(snapshot => {
         const prod = snapshot.val();
@@ -2947,8 +3122,73 @@ database.ref('siteMaintenance/maintenance').once('value').then(snap => {
 
 
 
+function toggleImageSource() {
+  const selected = document.querySelector('input[name="imageSource"]:checked').value;
+  const fileInput = document.getElementById('productImageInput'); // تأكد إن هذا هو ID حقل الرفع
+  const urlContainer = document.getElementById('imageURLInputContainer');
+
+  if (selected === 'upload') {
+    fileInput.style.display = 'block';
+    urlContainer.style.display = 'none';
+  } else {
+    fileInput.style.display = 'none';
+    urlContainer.style.display = 'block';
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function toggleImageSource() {
+  const selected = document.querySelector('input[name="imageSource"]:checked')?.value;
+  const fileInput = document.getElementById('productImage');
+  const urlInputContainer = document.getElementById('imageURLInputContainer');
+
+  if (selected === 'upload') {
+    fileInput.style.display = 'block';
+    urlInputContainer.style.display = 'none';
+    fileInput.required = true;
+  } else {
+    fileInput.style.display = 'none';
+    urlInputContainer.style.display = 'block';
+    fileInput.required = false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /* ---------------------------------------------------------- */
   </script>
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
